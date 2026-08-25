@@ -30,8 +30,6 @@ buildNumber.properties
 *~
 
 # ==================== Spring Boot ====================
-application-local.yml
-application-local.properties
 *.log
 logs/
 

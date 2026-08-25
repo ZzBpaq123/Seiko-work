@@ -1,0 +1,57 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:seiko_work}?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      idle-timeout: 60000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      pool-name: SeikoWorkHikariCP
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          min-idle: 10
+          max-idle: 20
+          max-active: 50
+          max-wait: 5000ms
+
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: true
+            required: true
+    default-encoding: UTF-8
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+      key-prefix: "seiko:cache:"
+      use-key-prefix: true
+      cache-null-values: false
+
+logging:
+  level:
+    root: WARN
+    com.seiko.work: INFO
