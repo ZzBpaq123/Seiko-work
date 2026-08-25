@@ -42,3 +42,6 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+
+# ==================== UI ====================
+/seiko-work-ui/node_modules/
