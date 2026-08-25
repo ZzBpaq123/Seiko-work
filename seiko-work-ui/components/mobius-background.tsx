@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry.js";
 import gsap from "gsap";
 
 const BACKGROUND_COLOR = 0xf8f6f0;
 const WIREFRAME_COLOR = 0x000000;
-const DOTS_COLOR = 0x222222;
 
 function createMobiusGeometry() {
-  function mobiusFunction(
-    u: number,
-    v: number,
-    target: THREE.Vector3
-  ) {
+  function mobiusFunction(u: number, v: number, target: THREE.Vector3) {
     const R = 1.3;
     const w = 0.55;
     const t = u * Math.PI * 2;
@@ -31,27 +27,11 @@ function createMobiusGeometry() {
   return new ParametricGeometry(mobiusFunction, 100, 20);
 }
 
-function createDotsGeometry(count = 2200) {
-  const positions: number[] = [];
-  for (let i = 0; i < count; i++) {
-    positions.push(
-      (Math.random() - 0.5) * 22,
-      (Math.random() - 0.5) * 16,
-      (Math.random() - 0.5) * 8 - 6
-    );
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(positions, 3)
-  );
-  return geometry;
-}
-
 function MobiusScene() {
-  const { scene, camera, gl } = useThree();
+  const { gl } = useThree();
   const mobiusRef = useRef<THREE.Mesh>(null);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const geometry = useMemo(() => createMobiusGeometry(), []);
 
@@ -71,15 +51,11 @@ function MobiusScene() {
       duration: 2.2,
       ease: "power2.out",
     });
+
+    return () => {
+      if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    };
   }, []);
-
-  useFrame(() => {
-    if (!mobiusRef.current) return;
-    mobiusRef.current.rotation.y += 0.0045;
-    mobiusRef.current.rotation.x += 0.0012;
-  });
-
-  const dotsGeometry = useMemo(() => createDotsGeometry(), []);
 
   return (
     <>
@@ -90,28 +66,82 @@ function MobiusScene() {
           side={THREE.DoubleSide}
         />
       </mesh>
-      <points geometry={dotsGeometry}>
-        <pointsMaterial
-          color={DOTS_COLOR}
-          size={0.022}
-          transparent
-          opacity={0.65}
-        />
-      </points>
+      <OrbitControls
+        autoRotate={autoRotate}
+        autoRotateSpeed={0.8}
+        enableZoom
+        enablePan={false}
+        enableRotate
+        minDistance={2}
+        maxDistance={10}
+        onStart={() => {
+          setAutoRotate(false);
+          if (resumeTimer.current) clearTimeout(resumeTimer.current);
+        }}
+        onEnd={() => {
+          if (resumeTimer.current) clearTimeout(resumeTimer.current);
+          resumeTimer.current = setTimeout(() => setAutoRotate(true), 1500);
+        }}
+      />
     </>
+  );
+}
+
+function NoiseOverlay() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.clearRect(0, 0, width, height);
+      const count = Math.floor(width * height * 0.04);
+      for (let i = 0; i < count; i++) {
+        ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.07})`;
+        ctx.fillRect(Math.random() * width, Math.random() * height, 1, 1);
+      }
+    };
+
+    draw();
+    window.addEventListener("resize", draw);
+    return () => window.removeEventListener("resize", draw);
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none fixed inset-0 z-[1]"
+      style={{ mixBlendMode: "multiply", opacity: 0.55 }}
+    />
   );
 }
 
 export function MobiusBackground() {
   return (
-    <div className="fixed inset-0 z-0">
-      <Canvas
-        camera={{ position: [0, 0, 4.5], fov: 60 }}
-        gl={{ antialias: true, alpha: true }}
-        dpr={typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1}
-      >
-        <MobiusScene />
-      </Canvas>
-    </div>
+    <>
+      <div className="fixed inset-0 z-0">
+        <Canvas
+          camera={{ position: [0, 0, 4.5], fov: 60 }}
+          gl={{ antialias: true, alpha: true }}
+          dpr={typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1}
+        >
+          <MobiusScene />
+        </Canvas>
+      </div>
+      <NoiseOverlay />
+    </>
   );
 }
