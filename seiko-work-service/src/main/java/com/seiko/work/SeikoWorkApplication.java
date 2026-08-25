@@ -18,11 +18,11 @@ public class SeikoWorkApplication {
     public static void main(String[] args) {
         SpringApplication.run(SeikoWorkApplication.class, args);
         System.out.println("""
-                 ____           _          __        __         _
-                / ___|  ___  __| | ___  _ _\\ \\      / /__  _ __| | __
-                \\___ \\ / _ \\/ _` |/ _ \\| '__\\ \\ /\\ / / _ \\| '__| |/ /
-                 ___) |  __/ (_| | (_) | |   \\ V  V / (_) | |  |   <
-                |____/ \\___|\\__,_|\\___/|_|    \\_/\\_/ \\___/|_|  |_|\\_\\
+                 ____       _ _          __        __         _   \s
+                / ___|  ___(_) | _____   \\ \\      / /__  _ __| | __
+                \\___ \\ / _ \\ | |/ / _ \\   \\ \\ /\\ / / _ \\| '__| |/ /
+                 ___) |  __/ |   < (_) |   \\ V  V / (_) | |  |   <\s
+                |____/ \\___|_|_|\\_\\___/     \\_/\\_/ \\___/|_|  |_|\\_\\
 
                 Seiko Work Service started successfully!
                 API docs: http://localhost:8080/api/swagger-ui.html
