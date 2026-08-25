@@ -45,3 +45,4 @@ desktop.ini
 
 # ==================== UI ====================
 /seiko-work-ui/node_modules/
+/seiko-work-ui/.next
