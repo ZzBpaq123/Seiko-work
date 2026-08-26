@@ -10,9 +10,9 @@ const BACKGROUND_COLOR = "#F8F6F0";
 const SURFACE_COLOR = "#FFFFFF";
 const WIREFRAME_COLOR = "#727478";
 
-const R = 1.3;
-const w = 0.55;
-const uCount = 40;
+const R = 1.5;
+const w = 0.65;
+const uCount = 45;
 const vCount = 9;
 
 function point(u: number, v: number, target: THREE.Vector3) {
