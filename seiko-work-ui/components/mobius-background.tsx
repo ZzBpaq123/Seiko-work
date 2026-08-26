@@ -4,16 +4,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry.js";
 import gsap from "gsap";
 
 const BACKGROUND_COLOR = 0xf8f6f0;
 const WIREFRAME_COLOR = 0x000000;
 
 function createMobiusGeometry() {
-  function mobiusFunction(u: number, v: number, target: THREE.Vector3) {
-    const R = 1.3;
-    const w = 0.55;
+  const R = 1.3;
+  const w = 0.55;
+  const uCount = 60;
+  const vCount = 13; // 12 intervals across the width
+
+  function point(u: number, v: number, target: THREE.Vector3) {
     const t = u * Math.PI * 2;
     const s = (v - 0.5) * 2 * w;
     const halfT = t / 2;
@@ -24,12 +26,55 @@ function createMobiusGeometry() {
     target.set(x, y, z);
   }
 
-  return new ParametricGeometry(mobiusFunction, 100, 20);
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i < uCount; i++) {
+    const u = i / uCount;
+    for (let j = 0; j < vCount; j++) {
+      const v = j / (vCount - 1);
+      const p = new THREE.Vector3();
+      point(u, v, p);
+      points.push(p);
+    }
+  }
+
+  const positions: number[] = [];
+
+  // Horizontal lines along the width
+  for (let i = 0; i < uCount; i++) {
+    for (let j = 0; j < vCount - 1; j++) {
+      const a = points[i * vCount + j];
+      const b = points[i * vCount + j + 1];
+      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+  }
+
+  // Vertical lines along the length
+  for (let i = 0; i < uCount - 1; i++) {
+    for (let j = 0; j < vCount; j++) {
+      const a = points[i * vCount + j];
+      const b = points[(i + 1) * vCount + j];
+      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+  }
+
+  // Wrap-around seam with the Möbius half-twist (v index flips)
+  for (let j = 0; j < vCount; j++) {
+    const a = points[(uCount - 1) * vCount + j];
+    const b = points[vCount - 1 - j];
+    positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  return geometry;
 }
 
 function MobiusScene() {
   const { gl } = useThree();
-  const mobiusRef = useRef<THREE.Mesh>(null);
+  const mobiusRef = useRef<THREE.LineSegments>(null);
   const [autoRotate, setAutoRotate] = useState(true);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,13 +104,9 @@ function MobiusScene() {
 
   return (
     <>
-      <mesh ref={mobiusRef} geometry={geometry}>
-        <meshBasicMaterial
-          color={WIREFRAME_COLOR}
-          wireframe
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <lineSegments ref={mobiusRef} geometry={geometry}>
+        <lineBasicMaterial color={WIREFRAME_COLOR} />
+      </lineSegments>
       <OrbitControls
         autoRotate={autoRotate}
         autoRotateSpeed={0.8}
