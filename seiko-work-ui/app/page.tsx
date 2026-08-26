@@ -1,4 +1,4 @@
-import { MobiusBackground } from "@/components/mobius-background";
+import { MobiusBackground } from "@/components/MobiusBackground";
 
 export default function Home() {
   return <MobiusBackground />;
