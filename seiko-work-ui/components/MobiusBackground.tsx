@@ -7,7 +7,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 
 const BACKGROUND_COLOR = 0xf8f6f0;
-const WIREFRAME_COLOR = 0x000000;
+const WIREFRAME_COLOR = "#727478";
 
 function createMobiusGeometry() {
   const R = 1.3;
