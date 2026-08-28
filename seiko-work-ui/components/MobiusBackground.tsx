@@ -11,9 +11,9 @@ const SURFACE_COLOR = "#FAFAF7";
 const WIREFRAME_COLOR = "#727478";
 
 const R = 1.5;
-const w = 0.65;
-const uCount = 45;
-const vCount = 9;
+const w = 0.45;
+const uCount = 65;
+const vCount = 10;
 
 function point(u: number, v: number, target: THREE.Vector3) {
     const t = u * Math.PI * 2;
@@ -175,8 +175,8 @@ function MobiusScene() {
                 enableZoom
                 enablePan={false}
                 enableRotate
-                minDistance={2}
-                maxDistance={10}
+                minDistance={1}
+                maxDistance={6}
                 onStart={() => {
                     setAutoRotate(false);
                     if (resumeTimer.current) clearTimeout(resumeTimer.current);
@@ -237,7 +237,7 @@ export function MobiusBackground() {
         <>
             <div className="fixed inset-0 z-0">
                 <Canvas flat
-                    camera={{position: [0, 0, 4.5], fov: 60}}
+                    camera={{position: [0, 0, 4.5], fov: 65}}
                     gl={{antialias: true, alpha: true}}
                     dpr={typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1}
                 >
