@@ -6,8 +6,8 @@ import {OrbitControls} from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 
-const BACKGROUND_COLOR = "#F8F6F0";
-const SURFACE_COLOR = "#FFFFFF";
+const BACKGROUND_COLOR = "#FAFAF7";
+const SURFACE_COLOR = "#FAFAF7";
 const WIREFRAME_COLOR = "#727478";
 
 const R = 1.5;
@@ -236,7 +236,7 @@ export function MobiusBackground() {
     return (
         <>
             <div className="fixed inset-0 z-0">
-                <Canvas
+                <Canvas flat
                     camera={{position: [0, 0, 4.5], fov: 60}}
                     gl={{antialias: true, alpha: true}}
                     dpr={typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1}
