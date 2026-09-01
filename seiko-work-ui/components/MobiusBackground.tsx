@@ -117,53 +117,78 @@ function createMobiusSurfaceGeometry() {
     return geometry;
 }
 
-function createOrbitingDotGeometry(count = 1400) {
+function createBackgroundDotGeometry(count = 2500) {
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+
+    const xyRange = 8;
+    const zMin = -5;
+    const zMax = 1;
+
+    let i = 0;
+    while (i < count) {
+        const x = (Math.random() * 2 - 1) * xyRange;
+        const y = (Math.random() * 2 - 1) * xyRange;
+        const z = zMin + Math.random() * (zMax - zMin);
+
+        const r = Math.sqrt(x * x + y * y);
+        if (r > xyRange) continue;
+
+        // Sparser toward the screen edges.
+        const edge = r / xyRange;
+        if (Math.random() > 1 - edge * edge) continue;
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        sizes[i] = 0.012 * (1 - 0.5 * edge) + 0.004;
+        i++;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    return geometry;
+}
+
+function createAccentDotGeometry(count = 6) {
     const positions = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
     const center = new THREE.Vector3();
-    const tangent = new THREE.Vector3();
     const radial = new THREE.Vector3();
-    const binormal = new THREE.Vector3();
-    const offset = new THREE.Vector3();
-
-    // Hollow shell around the central circle, leaving a gap so dots
-    // float around the Möbius strip instead of sitting on its surface.
-    const shellMin = w + 0.25;
-    const shellMax = w + 1.0;
+    const normal = new THREE.Vector3();
 
     for (let i = 0; i < count; i++) {
-        const u = Math.random();
+        const u = i / count;
         const t = u * Math.PI * 2;
+        const halfT = t / 2;
         const cosT = Math.cos(t);
         const sinT = Math.sin(t);
+        const cosHT = Math.cos(halfT);
+        const sinHT = Math.sin(halfT);
 
+        // Point on the Möbius strip centerline.
         center.set(R * cosT, R * sinT, 0);
 
-        // Frenet-like frame for the central circle
-        tangent.set(-sinT, cosT, 0).normalize();
-        radial.set(cosT, sinT, 0).normalize();
-        binormal.crossVectors(tangent, radial).normalize();
+        // Surface normal at the centerline (s = 0).
+        radial.set(cosT, sinT, 0);
+        normal.set(cosHT * cosT, cosHT * sinT, sinHT);
 
-        const r = shellMin + Math.random() * (shellMax - shellMin);
-        const theta = Math.random() * Math.PI * 2;
-        const cosTheta = Math.cos(theta);
-        const sinTheta = Math.sin(theta);
+        // Offset outward from the ring so the accent dots sit around it.
+        const r = w + 0.4 + Math.random() * 0.4;
+        const angle = Math.random() * Math.PI * 2;
+        const cosA = Math.cos(angle);
+        const sinA = Math.sin(angle);
 
-        offset
-            .set(
-                radial.x * cosTheta + binormal.x * sinTheta,
-                radial.y * cosTheta + binormal.y * sinTheta,
-                radial.z * cosTheta + binormal.z * sinTheta
-            )
-            .multiplyScalar(r);
+        positions[i * 3] =
+            center.x + r * (radial.x * cosA + normal.x * sinA);
+        positions[i * 3 + 1] =
+            center.y + r * (radial.y * cosA + normal.y * sinA);
+        positions[i * 3 + 2] =
+            center.z + r * (radial.z * cosA + normal.z * sinA);
 
-        positions[i * 3] = center.x + offset.x;
-        positions[i * 3 + 1] = center.y + offset.y;
-        positions[i * 3 + 2] = center.z + offset.z;
-
-        // Dots farther from the ring are smaller.
-        const shellT = (r - shellMin) / (shellMax - shellMin);
-        sizes[i] = 0.01 * (1.0 - 0.7 * shellT);
+        sizes[i] = 0.03 + Math.random() * 0.02;
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -202,7 +227,13 @@ const DOT_FRAGMENT_SHADER = `
     }
 `;
 
-function DotField({geometry}: {geometry: THREE.BufferGeometry}) {
+function DotField({
+    backgroundGeometry,
+    accentGeometry,
+}: {
+    backgroundGeometry: THREE.BufferGeometry;
+    accentGeometry: THREE.BufferGeometry;
+}) {
     const {gl} = useThree();
     const groupRef = useRef<THREE.Group>(null);
     const ownAngle = useRef(0);
@@ -256,7 +287,8 @@ function DotField({geometry}: {geometry: THREE.BufferGeometry}) {
 
     return (
         <group ref={groupRef}>
-            <points geometry={geometry} material={material}/>
+            <points geometry={backgroundGeometry} material={material}/>
+            <points geometry={accentGeometry} material={material}/>
         </group>
     );
 }
@@ -267,7 +299,8 @@ function MobiusScene() {
 
     const lineGeometry = useMemo(() => createMobiusLineGeometry(), []);
     const surfaceGeometry = useMemo(() => createMobiusSurfaceGeometry(), []);
-    const dotGeometry = useMemo(() => createOrbitingDotGeometry(), []);
+    const backgroundDotGeometry = useMemo(() => createBackgroundDotGeometry(), []);
+    const accentDotGeometry = useMemo(() => createAccentDotGeometry(), []);
 
     useEffect(() => {
         gl.setClearColor(BACKGROUND_COLOR);
@@ -314,7 +347,10 @@ function MobiusScene() {
                     />
                 </lineSegments>
             </group>
-            <DotField geometry={dotGeometry}/>
+            <DotField
+                backgroundGeometry={backgroundDotGeometry}
+                accentGeometry={accentDotGeometry}
+            />
             <OrbitControls
                 enableZoom
                 enablePan={false}
