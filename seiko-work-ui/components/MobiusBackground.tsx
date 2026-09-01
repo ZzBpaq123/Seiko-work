@@ -271,7 +271,7 @@ function MobiusScene() {
     useFrame((_, delta) => {
         if (!groupRef.current) return;
         // The Möbius strip rotates on its own, independent of the camera.
-        groupRef.current.rotation.y += 0.4 * delta;
+        groupRef.current.rotation.y += 0.1 * delta;
     });
 
     return (
