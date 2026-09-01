@@ -1,7 +1,7 @@
 "use client";
 
-import {useEffect, useMemo, useRef, useState} from "react";
-import {Canvas, useThree} from "@react-three/fiber";
+import {useEffect, useMemo, useRef} from "react";
+import {Canvas, useFrame, useThree} from "@react-three/fiber";
 import {OrbitControls} from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
@@ -117,14 +117,138 @@ function createMobiusSurfaceGeometry() {
     return geometry;
 }
 
+function createOrbitingDotGeometry(count = 1400) {
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+    const center = new THREE.Vector3();
+    const tangent = new THREE.Vector3();
+    const radial = new THREE.Vector3();
+    const binormal = new THREE.Vector3();
+    const offset = new THREE.Vector3();
+
+    // Hollow shell around the central circle, leaving a gap so dots
+    // float around the Möbius strip instead of sitting on its surface.
+    const shellMin = w + 0.25;
+    const shellMax = w + 1.0;
+
+    for (let i = 0; i < count; i++) {
+        const u = Math.random();
+        const t = u * Math.PI * 2;
+        const cosT = Math.cos(t);
+        const sinT = Math.sin(t);
+
+        center.set(R * cosT, R * sinT, 0);
+
+        // Frenet-like frame for the central circle
+        tangent.set(-sinT, cosT, 0).normalize();
+        radial.set(cosT, sinT, 0).normalize();
+        binormal.crossVectors(tangent, radial).normalize();
+
+        const r = shellMin + Math.random() * (shellMax - shellMin);
+        const theta = Math.random() * Math.PI * 2;
+        const cosTheta = Math.cos(theta);
+        const sinTheta = Math.sin(theta);
+
+        offset
+            .set(
+                radial.x * cosTheta + binormal.x * sinTheta,
+                radial.y * cosTheta + binormal.y * sinTheta,
+                radial.z * cosTheta + binormal.z * sinTheta
+            )
+            .multiplyScalar(r);
+
+        positions[i * 3] = center.x + offset.x;
+        positions[i * 3 + 1] = center.y + offset.y;
+        positions[i * 3 + 2] = center.z + offset.z;
+
+        // Dots farther from the ring are smaller.
+        const shellT = (r - shellMin) / (shellMax - shellMin);
+        sizes[i] = 0.01 * (1.0 - 0.7 * shellT);
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    return geometry;
+}
+
+const DOT_VERTEX_SHADER = `
+    attribute float size;
+    varying float vAlpha;
+    uniform float uScale;
+    uniform float uPixelRatio;
+    uniform float uFadeStart;
+    uniform float uFadeEnd;
+
+    void main() {
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+
+        float screenSize = size * (uScale / -mvPosition.z) * uPixelRatio;
+        gl_PointSize = screenSize;
+
+        vAlpha = 1.0 - smoothstep(uFadeStart, uFadeEnd, screenSize);
+    }
+`;
+
+const DOT_FRAGMENT_SHADER = `
+    varying float vAlpha;
+
+    void main() {
+        vec2 coord = gl_PointCoord - vec2(0.5);
+        if (length(coord) > 0.5) discard;
+
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.85 * vAlpha);
+    }
+`;
+
+function DotField({geometry}: {geometry: THREE.BufferGeometry}) {
+    const {gl} = useThree();
+    const groupRef = useRef<THREE.Group>(null);
+    const ownAngle = useRef(0);
+
+    const material = useMemo(
+        () =>
+            new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                uniforms: {
+                    uScale: {value: 600.0},
+                    uPixelRatio: {value: gl.getPixelRatio()},
+                    uFadeStart: {value: 18.0},
+                    uFadeEnd: {value: 32.0},
+                },
+                vertexShader: DOT_VERTEX_SHADER,
+                fragmentShader: DOT_FRAGMENT_SHADER,
+            }),
+        [gl]
+    );
+
+    useEffect(() => {
+        material.uniforms.uPixelRatio.value = gl.getPixelRatio();
+    }, [gl, material]);
+
+    useFrame((_, delta) => {
+        if (!groupRef.current) return;
+        // Clockwise rotation in the XY plane, independent of the camera.
+        ownAngle.current -= 0.03 * delta;
+        groupRef.current.rotation.z = ownAngle.current;
+    });
+    useFrame
+    return (
+        <group ref={groupRef}>
+            <points geometry={geometry} material={material}/>
+        </group>
+    );
+}
+
 function MobiusScene() {
     const {gl} = useThree();
     const groupRef = useRef<THREE.Group>(null);
-    const [autoRotate, setAutoRotate] = useState(true);
-    const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const lineGeometry = useMemo(() => createMobiusLineGeometry(), []);
     const surfaceGeometry = useMemo(() => createMobiusSurfaceGeometry(), []);
+    const dotGeometry = useMemo(() => createOrbitingDotGeometry(), []);
 
     useEffect(() => {
         gl.setClearColor(BACKGROUND_COLOR);
@@ -142,11 +266,13 @@ function MobiusScene() {
             duration: 2.2,
             ease: "power2.out",
         });
-
-        return () => {
-            if (resumeTimer.current) clearTimeout(resumeTimer.current);
-        };
     }, []);
+
+    useFrame((_, delta) => {
+        if (!groupRef.current) return;
+        // The Möbius strip rotates on its own, independent of the camera.
+        groupRef.current.rotation.y += 0.4 * delta;
+    });
 
     return (
         <>
@@ -169,22 +295,13 @@ function MobiusScene() {
                     />
                 </lineSegments>
             </group>
+            <DotField geometry={dotGeometry}/>
             <OrbitControls
-                autoRotate={autoRotate}
-                autoRotateSpeed={0.8}
                 enableZoom
                 enablePan={false}
                 enableRotate
                 minDistance={1}
                 maxDistance={6}
-                onStart={() => {
-                    setAutoRotate(false);
-                    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-                }}
-                onEnd={() => {
-                    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-                    resumeTimer.current = setTimeout(() => setAutoRotate(true), 1500);
-                }}
             />
         </>
     );
