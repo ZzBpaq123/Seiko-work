@@ -178,7 +178,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendPhoneCode(SendPhoneCodeDTO dto) {
-        if (!Boolean.TRUE.equals(securityProperties.getEmailCode().getEnabled())) {
+        if (!Boolean.TRUE.equals(securityProperties.getPhoneCode().getEnabled())) {
             throw new BusinessException(ResultCode.ERROR.getCode(), "手机验证码功能未启用");
         }
 
@@ -200,19 +200,19 @@ public class AuthServiceImpl implements AuthService {
         if (count != null && count == 1) {
             redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
         }
-        if (count != null && count > securityProperties.getEmailCode().getIpMaxSendsPerHour()) {
+        if (count != null && count > securityProperties.getPhoneCode().getIpMaxSendsPerHour()) {
             redisTemplate.opsForValue().set(ipLockKey, "1",
-                    Duration.ofSeconds(securityProperties.getEmailCode().getIpLockSeconds()));
+                    Duration.ofSeconds(securityProperties.getPhoneCode().getIpLockSeconds()));
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
-        String code = EmailCodeUtil.generate(securityProperties.getEmailCode().getCodeLength());
+        String code = EmailCodeUtil.generate(securityProperties.getPhoneCode().getCodeLength());
         String codeKey = RedisKey.PHONE_CODE.format(phone);
         redisTemplate.opsForValue().set(codeKey, code,
-                Duration.ofSeconds(securityProperties.getEmailCode().getCodeTtlSeconds()));
+                Duration.ofSeconds(securityProperties.getPhoneCode().getCodeTtlSeconds()));
 
         redisTemplate.opsForValue().set(cooldownKey, "1",
-                Duration.ofSeconds(securityProperties.getEmailCode().getResendCooldownSeconds()));
+                Duration.ofSeconds(securityProperties.getPhoneCode().getResendCooldownSeconds()));
 
         smsService.send(phone, code);
         log.info("已向手机号 {} 发送验证码", phone);

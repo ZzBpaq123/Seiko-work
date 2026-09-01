@@ -22,6 +22,11 @@ public class SecurityProperties {
      */
     private EmailCodeProperties emailCode = new EmailCodeProperties();
 
+    /**
+     * 手机号验证码配置
+     */
+    private PhoneCodeProperties phoneCode = new PhoneCodeProperties();
+
     @Data
     public static class LoginRateLimitProperties {
 
@@ -93,5 +98,39 @@ public class SecurityProperties {
          * 邮件主题
          */
         private String subject = "Seiko 邮箱验证码";
+    }
+
+    @Data
+    public static class PhoneCodeProperties {
+
+        /**
+         * 是否启用
+         */
+        private Boolean enabled = true;
+
+        /**
+         * 验证码长度
+         */
+        private Integer codeLength = 6;
+
+        /**
+         * 验证码有效期（秒）
+         */
+        private Long codeTtlSeconds = 300L;
+
+        /**
+         * 同一手机号重发冷却时间（秒）
+         */
+        private Long resendCooldownSeconds = 60L;
+
+        /**
+         * 同一 IP 每小时最多发送次数
+         */
+        private Integer ipMaxSendsPerHour = 3;
+
+        /**
+         * IP 超限锁定时长（秒）
+         */
+        private Long ipLockSeconds = 3600L;
     }
 }
