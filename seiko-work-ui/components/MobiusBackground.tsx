@@ -228,13 +228,32 @@ function DotField({geometry}: {geometry: THREE.BufferGeometry}) {
         material.uniforms.uPixelRatio.value = gl.getPixelRatio();
     }, [gl, material]);
 
+    useEffect(() => {
+        if (!groupRef.current) return;
+
+        groupRef.current.scale.set(0.01, 0.01, 0.01);
+
+        const tween = gsap.to(groupRef.current.scale, {
+            x: 1,
+            y: 1,
+            z: 1,
+            duration: 2.2,
+            ease: "power2.out",
+            delay: 0.1,
+        });
+
+        return () => {
+            tween.kill();
+        };
+    }, []);
+
     useFrame((_, delta) => {
         if (!groupRef.current) return;
         // Clockwise rotation in the XY plane, independent of the camera.
         ownAngle.current -= 0.03 * delta;
         groupRef.current.rotation.z = ownAngle.current;
     });
-    useFrame
+
     return (
         <group ref={groupRef}>
             <points geometry={geometry} material={material}/>
