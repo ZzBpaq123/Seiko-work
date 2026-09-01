@@ -34,5 +34,5 @@ spring:
 # 日志级别
 logging:
   level:
-    com.seiko.blog: DEBUG
+    com.seiko.work: DEBUG
     com.baomidou.mybatisplus: DEBUG

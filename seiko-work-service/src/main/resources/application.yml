@@ -38,7 +38,7 @@ server:
 # 日志配置
 logging:
   level:
-    com.seiko.blog: INFO
+    com.seiko.work: INFO
     org.springframework.web: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
@@ -63,7 +63,7 @@ sa-token:
 # MyBatis-Plus 配置
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
-  type-aliases-package: com.seiko.blog.entity
+  type-aliases-package: com.seiko.work.module.user.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

@@ -152,7 +152,7 @@ function createBackgroundDotGeometry(count = 2500) {
     return geometry;
 }
 
-function createAccentDotGeometry(count = 6) {
+function createAccentDotGeometry(count = 1) {
     const positions = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
     const center = new THREE.Vector3();

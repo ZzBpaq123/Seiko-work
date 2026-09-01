@@ -2,7 +2,8 @@ package com.seiko.work.config;
 
 import cn.dev33.satoken.filter.SaServletFilter;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.dev33.satoken.util.SaResult;
+import com.seiko.work.base.Result;
+import com.seiko.work.base.ResultCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +29,7 @@ public class SaTokenConfig {
                 .addInclude("/**")
                 // 指定放行路由（静态资源 & Swagger & 上传文件）
                 .addExclude("/favicon.ico", "/doc.html", "/webjars/**", "/swagger-resources/**", "/v3/api-docs/**",
-                        "/swagger-ui/**", "/swagger-ui.html")
+                        "/swagger-ui/**", "/swagger-ui.html", "/auth/**")
                 // 认证函数：基于路径和方法做权限校验
                 .setAuth(obj -> {
                     // 5. 其余接口默认需要登录
@@ -36,8 +37,8 @@ public class SaTokenConfig {
                 })
                 // 异常处理函数
                 .setError(e -> {
-                    log.error("Sa-Token 异常: {}", e.getMessage());
-                    return SaResult.error(e.getMessage()).setCode(401);
+                    log.warn("Sa-Token 全局过滤器异常: {}", e.getMessage());
+                    return Result.error(ResultCode.UNAUTHORIZED.getCode(), e.getMessage());
                 });
     }
 
