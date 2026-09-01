@@ -60,18 +60,18 @@ public class AuthServiceImpl implements AuthService {
         String email = dto.getEmail();
         String ip = IpUtils.getClientIp(request);
 
-        String ipLockKey = RedisKey.EMAIL_IP_LOCK.format(ip);
+        String ipLockKey = RedisKey.EMAIL_IP_LOCK.formatted(ip);
         if (redisTemplate.hasKey(ipLockKey)) {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
-        String cooldownKey = RedisKey.EMAIL_COOLDOWN.format(email);
+        String cooldownKey = RedisKey.EMAIL_COOLDOWN.formatted(email);
         if (redisTemplate.hasKey(cooldownKey)) {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
         // IP 发送次数限制
-        String ipCountKey = RedisKey.EMAIL_IP_COUNT.format(ip);
+        String ipCountKey = RedisKey.EMAIL_IP_COUNT.formatted(ip);
         Long count = redisTemplate.opsForValue().increment(ipCountKey);
         if (count != null && count == 1) {
             redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
@@ -84,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 生成并存储验证码
         String code = EmailCodeUtil.generate(securityProperties.getEmailCode().getCodeLength());
-        String codeKey = RedisKey.EMAIL_CODE.format(email);
+        String codeKey = RedisKey.EMAIL_CODE.formatted(email);
         redisTemplate.opsForValue().set(codeKey, code,
                 Duration.ofSeconds(securityProperties.getEmailCode().getCodeTtlSeconds()));
 
@@ -112,7 +112,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     public void emailRegister(RegisterDTO dto) {
         String email = dto.getEmail();
-        String codeKey = RedisKey.EMAIL_CODE.format(email);
+        String codeKey = RedisKey.EMAIL_CODE.formatted(email);
         String cachedCode = redisTemplate.opsForValue().get(codeKey);
 
         if (cachedCode == null || !cachedCode.equals(dto.getCode())) {
@@ -185,17 +185,17 @@ public class AuthServiceImpl implements AuthService {
         String phone = dto.getPhone();
         String ip = IpUtils.getClientIp(request);
 
-        String ipLockKey = RedisKey.PHONE_IP_LOCK.format(ip);
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(ipLockKey))) {
+        String ipLockKey = RedisKey.PHONE_IP_LOCK.formatted(ip);
+        if (redisTemplate.hasKey(ipLockKey)) {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
-        String cooldownKey = RedisKey.PHONE_COOLDOWN.format(phone);
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
+        String cooldownKey = RedisKey.PHONE_COOLDOWN.formatted(phone);
+        if (redisTemplate.hasKey(cooldownKey)) {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
-        String ipCountKey = RedisKey.PHONE_IP_COUNT.format(ip);
+        String ipCountKey = RedisKey.PHONE_IP_COUNT.formatted(ip);
         Long count = redisTemplate.opsForValue().increment(ipCountKey);
         if (count != null && count == 1) {
             redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
@@ -207,7 +207,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String code = EmailCodeUtil.generate(securityProperties.getPhoneCode().getCodeLength());
-        String codeKey = RedisKey.PHONE_CODE.format(phone);
+        String codeKey = RedisKey.PHONE_CODE.formatted(phone);
         redisTemplate.opsForValue().set(codeKey, code,
                 Duration.ofSeconds(securityProperties.getPhoneCode().getCodeTtlSeconds()));
 
@@ -222,7 +222,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     public void phoneRegister(PhoneRegisterDTO dto) {
         String phone = dto.getPhone();
-        String codeKey = RedisKey.PHONE_CODE.format(phone);
+        String codeKey = RedisKey.PHONE_CODE.formatted(phone);
         String cachedCode = redisTemplate.opsForValue().get(codeKey);
 
         if (cachedCode == null || !cachedCode.equals(dto.getCode())) {
@@ -269,7 +269,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.USER_DISABLED);
         }
 
-        String codeKey = RedisKey.PHONE_CODE.format(phone);
+        String codeKey = RedisKey.PHONE_CODE.formatted(phone);
         String cachedCode = redisTemplate.opsForValue().get(codeKey);
         if (cachedCode == null || !cachedCode.equals(dto.getCode())) {
             handleLoginFailure(phone, ip);
@@ -306,8 +306,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void checkLoginLock(String email, String ip) {
-        String accountLockKey = RedisKey.LOGIN_ACCOUNT_LOCK.format(email);
-        String ipLockKey = RedisKey.LOGIN_IP_LOCK.format(ip);
+        String accountLockKey = RedisKey.LOGIN_ACCOUNT_LOCK.formatted(email);
+        String ipLockKey = RedisKey.LOGIN_IP_LOCK.formatted(ip);
         if (redisTemplate.hasKey(accountLockKey)) {
             throw new BusinessException(ResultCode.TOO_MANY_REQUESTS.getCode(), "账号已被锁定，请稍后再试");
         }
@@ -324,13 +324,13 @@ public class AuthServiceImpl implements AuthService {
         long windowSeconds = securityProperties.getLoginRateLimit().getWindowSeconds();
         long lockSeconds = securityProperties.getLoginRateLimit().getLockSeconds();
 
-        incrementFailCount(RedisKey.LOGIN_ACCOUNT_FAIL.format(email),
+        incrementFailCount(RedisKey.LOGIN_ACCOUNT_FAIL.formatted(email),
                 securityProperties.getLoginRateLimit().getMaxAttempts(),
-                RedisKey.LOGIN_ACCOUNT_LOCK.format(email), windowSeconds, lockSeconds);
+                RedisKey.LOGIN_ACCOUNT_LOCK.formatted(email), windowSeconds, lockSeconds);
 
-        incrementFailCount(RedisKey.LOGIN_IP_FAIL.format(ip),
+        incrementFailCount(RedisKey.LOGIN_IP_FAIL.formatted(ip),
                 securityProperties.getLoginRateLimit().getIpMaxAttempts(),
-                RedisKey.LOGIN_IP_LOCK.format(ip), windowSeconds, lockSeconds);
+                RedisKey.LOGIN_IP_LOCK.formatted(ip), windowSeconds, lockSeconds);
     }
 
     private void incrementFailCount(String failKey, int maxAttempts, String lockKey, long windowSeconds, long lockSeconds) {
@@ -347,8 +347,8 @@ public class AuthServiceImpl implements AuthService {
         if (!Boolean.TRUE.equals(securityProperties.getLoginRateLimit().getEnabled())) {
             return;
         }
-        redisTemplate.delete(RedisKey.LOGIN_ACCOUNT_FAIL.format(email));
-        redisTemplate.delete(RedisKey.LOGIN_IP_FAIL.format(ip));
+        redisTemplate.delete(RedisKey.LOGIN_ACCOUNT_FAIL.formatted(email));
+        redisTemplate.delete(RedisKey.LOGIN_IP_FAIL.formatted(ip));
     }
 
     private String getSenderEmail() {
