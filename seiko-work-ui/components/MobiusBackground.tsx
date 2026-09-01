@@ -121,21 +121,21 @@ function createBackgroundDotGeometry(count = 2500) {
     const positions = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
 
-    const xyRange = 8;
-    const zMin = -5;
-    const zMax = 1;
+    // Use a large symmetric sphere so the background stays full-screen
+    // regardless of the camera angle.
+    const range = 10;
 
     let i = 0;
     while (i < count) {
-        const x = (Math.random() * 2 - 1) * xyRange;
-        const y = (Math.random() * 2 - 1) * xyRange;
-        const z = zMin + Math.random() * (zMax - zMin);
+        const x = (Math.random() * 2 - 1) * range;
+        const y = (Math.random() * 2 - 1) * range;
+        const z = (Math.random() * 2 - 1) * range;
 
-        const r = Math.sqrt(x * x + y * y);
-        if (r > xyRange) continue;
+        const r = Math.sqrt(x * x + y * y + z * z);
+        if (r > range) continue;
 
-        // Sparser toward the screen edges.
-        const edge = r / xyRange;
+        // Sparser toward the edges of the sphere (screen edges).
+        const edge = r / range;
         if (Math.random() > 1 - edge * edge) continue;
 
         positions[i * 3] = x;
