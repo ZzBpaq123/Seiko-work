@@ -206,7 +206,6 @@ function createBackgroundDotGeometry(count = 2000) {
         const r = Math.sqrt(x * x + y * y + z * z);
         if (r > range) continue;
 
-        // Sparser toward the edges of the sphere (screen edges).
         // 越靠近球体外缘（屏幕边缘）密度越低：以概率 (1 - edge²) 剔除，
         // 中心区域基本保留，边缘越来越稀疏
         const edge = r / range;
