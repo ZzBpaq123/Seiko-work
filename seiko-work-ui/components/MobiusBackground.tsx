@@ -188,7 +188,7 @@ function createAccentDotGeometry(count = 1) {
         positions[i * 3 + 2] =
             center.z + r * (radial.z * cosA + normal.z * sinA);
 
-        sizes[i] = 0.03 + Math.random() * 0.02;
+        sizes[i] = 0.01 + Math.random() * 0.02;
     }
 
     const geometry = new THREE.BufferGeometry();
