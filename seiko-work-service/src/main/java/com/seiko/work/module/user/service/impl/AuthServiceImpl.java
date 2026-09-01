@@ -110,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void register(RegisterDTO dto) {
+    public void emailRegister(RegisterDTO dto) {
         String email = dto.getEmail();
         String codeKey = RedisKey.EMAIL_CODE.format(email);
         String cachedCode = redisTemplate.opsForValue().get(codeKey);
@@ -139,7 +139,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginVO login(LoginDTO dto) {
+    public LoginVO emailLogin(LoginDTO dto) {
         String email = dto.getEmail();
         String ip = IpUtils.getClientIp(request);
 

@@ -108,10 +108,14 @@ java -jar target/seiko-work-service.jar
 
 ### 认证授权
 
-- 登录接口：`POST /api/auth/login`
-- 注册接口：`POST /api/auth/register`
+- 发送邮箱验证码：`POST /api/auth/email/code`
+- 邮箱注册接口：`POST /api/auth/email/register`
+- 邮箱登录接口：`POST /api/auth/email/login`
+- 发送手机验证码：`POST /api/auth/phone/code`
+- 手机号注册接口：`POST /api/auth/phone/register`
+- 手机号验证码登录：`POST /api/auth/phone/login`
 - 登出接口：`POST /api/auth/logout`
-- 发送验证码：`POST /api/auth/send-code?email=xxx`
+- 获取当前登录用户信息：`GET /api/auth/info`
 - 请求头携带 `Authorization: <token>` 进行认证
 
 ### 权限注解

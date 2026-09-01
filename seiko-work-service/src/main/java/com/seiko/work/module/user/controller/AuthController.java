@@ -33,27 +33,27 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/send-code")
+    @PostMapping("/email/code")
     @Operation(summary = "发送邮箱验证码")
     public Result<Void> sendEmailCode(@Valid @RequestBody SendEmailCodeDTO dto) {
         authService.sendEmailCode(dto);
         return Result.success();
     }
 
-    @PostMapping("/register")
-    @Operation(summary = "用户注册")
-    public Result<Void> register(@Valid @RequestBody RegisterDTO dto) {
-        authService.register(dto);
+    @PostMapping("/email/register")
+    @Operation(summary = "用户注册（邮箱+密码）")
+    public Result<Void> emailRegister(@Valid @RequestBody RegisterDTO dto) {
+        authService.emailRegister(dto);
         return Result.success();
     }
 
-    @PostMapping("/login")
+    @PostMapping("/email/login")
     @Operation(summary = "用户登录（邮箱+密码）")
-    public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
-        return Result.success(authService.login(dto));
+    public Result<LoginVO> emailLogin(@Valid @RequestBody LoginDTO dto) {
+        return Result.success(authService.emailLogin(dto));
     }
 
-    @PostMapping("/phone/send-code")
+    @PostMapping("/phone/code")
     @Operation(summary = "发送手机验证码")
     public Result<Void> sendPhoneCode(@Valid @RequestBody SendPhoneCodeDTO dto) {
         authService.sendPhoneCode(dto);

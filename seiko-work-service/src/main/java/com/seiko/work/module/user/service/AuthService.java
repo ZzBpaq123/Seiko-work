@@ -26,7 +26,7 @@ public interface AuthService {
      *
      * @param dto 请求参数
      */
-    void register(RegisterDTO dto);
+    void emailRegister(RegisterDTO dto);
 
     /**
      * 用户登录
@@ -34,7 +34,7 @@ public interface AuthService {
      * @param dto 请求参数
      * @return 登录信息
      */
-    LoginVO login(LoginDTO dto);
+    LoginVO emailLogin(LoginDTO dto);
 
     /**
      * 发送手机验证码
