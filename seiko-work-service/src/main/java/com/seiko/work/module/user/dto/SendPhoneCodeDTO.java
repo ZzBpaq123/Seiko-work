@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -14,6 +15,7 @@ import java.io.Serializable;
 @Schema(description = "发送手机验证码请求参数")
 public class SendPhoneCodeDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @NotBlank(message = "手机号不能为空")

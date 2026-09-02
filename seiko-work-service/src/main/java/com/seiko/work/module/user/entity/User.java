@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
+
 /**
  * 用户实体
  */
@@ -16,6 +18,7 @@ import lombok.EqualsAndHashCode;
 @Schema(description = "用户实体")
 public class User extends BaseEntity {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
