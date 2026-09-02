@@ -12,7 +12,7 @@ import org.springframework.cache.annotation.EnableCaching;
  */
 @SpringBootApplication
 @EnableCaching
-@MapperScan("com.seiko.work.module.**.mapper")
+@MapperScan("com.seiko.work.**.mapper")
 public class SeikoWorkApplication {
 
     public static void main(String[] args) {

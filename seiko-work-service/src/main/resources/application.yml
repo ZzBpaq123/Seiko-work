@@ -63,7 +63,7 @@ sa-token:
 # MyBatis-Plus 配置
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
-  type-aliases-package: com.seiko.work.module.user.entity,com.seiko.work.module.workstation.entity
+  type-aliases-package: com.seiko.work.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
