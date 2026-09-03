@@ -26,16 +26,13 @@ function NavButton({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       aria-label={item.label}
       className={cn(
-        "group relative flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm transition-colors duration-200",
+        "relative flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm transition-colors duration-200",
         active
           ? "border-neutral-900 bg-neutral-900 text-neutral-50"
           : "border-neutral-900/15 bg-white/70 text-neutral-700 hover:border-neutral-900 hover:bg-neutral-900 hover:text-neutral-50"
       )}
     >
       <Icon className="h-5 w-5" />
-      <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-md border border-neutral-900/10 bg-white/90 px-2 py-1 text-xs text-neutral-800 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
-        {item.label}
-      </span>
     </a>
   );
 }
