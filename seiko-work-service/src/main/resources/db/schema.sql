@@ -25,26 +25,21 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
     UNIQUE KEY `uk_phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 邮件表
-CREATE TABLE IF NOT EXISTS `mail_message` (
+-- 邮箱账号配置表（邮件内容不入库，通过 IMAP 实时拉取）
+CREATE TABLE IF NOT EXISTS `mail_account` (
     `id`              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     `user_id`         BIGINT       NOT NULL COMMENT '用户ID',
-    `message_uid`     VARCHAR(255) NOT NULL COMMENT '邮件原始UID',
-    `from_address`    VARCHAR(255) DEFAULT NULL COMMENT '发件人邮箱',
-    `from_name`       VARCHAR(255) DEFAULT NULL COMMENT '发件人名称',
-    `subject`         VARCHAR(500) DEFAULT NULL COMMENT '主题',
-    `content_text`    LONGTEXT     DEFAULT NULL COMMENT '纯文本正文',
-    `content_html`    LONGTEXT     DEFAULT NULL COMMENT 'HTML正文',
-    `receive_time`    DATETIME     DEFAULT NULL COMMENT '收取时间',
-    `is_read`         TINYINT      NOT NULL DEFAULT 0 COMMENT '是否已读：0-未读，1-已读',
-    `has_attachment`  TINYINT      NOT NULL DEFAULT 0 COMMENT '是否有附件：0-无，1-有',
+    `email`           VARCHAR(100) NOT NULL COMMENT '邮箱地址',
+    `auth_code`       VARCHAR(255) NOT NULL COMMENT '邮箱授权码',
+    `imap_host`       VARCHAR(100) NOT NULL COMMENT 'IMAP服务器地址',
+    `imap_port`       INT          NOT NULL DEFAULT 993 COMMENT 'IMAP端口',
+    `ssl_enable`      TINYINT      NOT NULL DEFAULT 1 COMMENT '是否启用SSL：0-否，1-是',
     `create_time`     DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `is_deleted`      TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除标志：0-未删除，1-已删除',
     `delete_time`     DATETIME     DEFAULT NULL COMMENT '删除时间',
-    UNIQUE KEY `uk_user_message_uid` (`user_id`, `message_uid`),
-    KEY `idx_user_receive_time` (`user_id`, `receive_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮件表';
+    UNIQUE KEY `uk_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮箱账号配置表';
 
 -- 工作事项表
 CREATE TABLE IF NOT EXISTS `work_task` (
