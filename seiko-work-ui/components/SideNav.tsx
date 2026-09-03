@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
+import { useHash } from "@/hooks/useHash";
 
 type NavItem = {
   key: string;
@@ -48,6 +49,10 @@ function NavButton({ item, active }: { item: NavItem; active: boolean }) {
 
 export function SideNav() {
   const pathname = usePathname();
+  const hash = useHash();
+
+  const isActive = (item: NavItem) =>
+    item.href.startsWith("#") ? hash === item.href : pathname === item.href;
 
   return (
     <nav
@@ -55,11 +60,7 @@ export function SideNav() {
       className="fixed right-6 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-3"
     >
       {NAV_ITEMS.map((item) => (
-        <NavButton
-          key={item.key}
-          item={item}
-          active={item.href !== "#" && pathname === item.href}
-        />
+        <NavButton key={item.key} item={item} active={isActive(item)} />
       ))}
     </nav>
   );
