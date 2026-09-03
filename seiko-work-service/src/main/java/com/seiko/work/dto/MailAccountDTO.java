@@ -2,7 +2,6 @@ package com.seiko.work.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serial;
@@ -26,16 +25,13 @@ public class MailAccountDTO implements Serializable {
     @Schema(description = "邮箱授权码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String authCode;
 
-    @NotBlank(message = "IMAP服务器地址不能为空")
-    @Schema(description = "IMAP服务器地址", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "IMAP服务器地址，缺省时按邮箱后缀自动识别")
     private String imapHost;
 
-    @NotNull(message = "IMAP端口不能为空")
-    @Schema(description = "IMAP端口", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "IMAP端口，缺省时按邮箱后缀自动识别")
     private Integer imapPort;
 
-    @NotNull(message = "是否启用SSL不能为空")
-    @Schema(description = "是否启用SSL", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "是否启用SSL，缺省时按邮箱后缀自动识别")
     private Boolean sslEnable;
 
 }

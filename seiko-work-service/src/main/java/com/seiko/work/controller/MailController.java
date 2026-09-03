@@ -6,6 +6,8 @@ import com.seiko.work.base.Result;
 import com.seiko.work.dto.MailAccountDTO;
 import com.seiko.work.entity.MailAccount;
 import com.seiko.work.entity.MailMessage;
+import com.seiko.work.enums.MailProviderEnum;
+import com.seiko.work.exception.BusinessException;
 import com.seiko.work.service.MailAccountService;
 import com.seiko.work.service.MailMessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,8 +49,15 @@ public class MailController {
             account.setUserId(userId);
         }
         BeanUtils.copyProperties(dto, account);
+        fillServerConfig(account);
         mailAccountService.saveOrUpdate(account);
         return Result.success();
+    }
+
+    @GetMapping("/account/providers")
+    @Operation(summary = "支持的邮箱服务商列表")
+    public Result<List<MailProviderEnum>> listProviders() {
+        return Result.success(MailProviderEnum.all());
     }
 
     @GetMapping("/account")
@@ -78,6 +87,25 @@ public class MailController {
         Long userId = StpUtil.getLoginIdAsLong();
         mailMessageService.markRead(userId, messageUid);
         return Result.success();
+    }
+
+    /**
+     * 服务器配置缺省时按邮箱后缀匹配服务商自动补全
+     */
+    private void fillServerConfig(MailAccount account) {
+        MailProviderEnum provider = MailProviderEnum.resolve(account.getEmail());
+        if (account.getImapHost() == null || account.getImapHost().isBlank()) {
+            if (provider == null) {
+                throw new BusinessException("无法自动识别该邮箱服务商，请手动填写 IMAP 服务器地址");
+            }
+            account.setImapHost(provider.getImapHost());
+        }
+        if (account.getImapPort() == null) {
+            account.setImapPort(provider != null ? provider.getImapPort() : 993);
+        }
+        if (account.getSslEnable() == null) {
+            account.setSslEnable(provider == null || provider.getSslEnable());
+        }
     }
 
 }
