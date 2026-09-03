@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type InputHTMLAttributes } from "react";
-import { KeyRound, Loader2, LogIn, LogOut, Mail, Phone, User, X } from "lucide-react";
+import { KeyRound, Loader2, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearHash } from "@/hooks/useHash";
 import {
@@ -272,15 +272,6 @@ export function LoginPanel() {
       <section className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
-            {user ? (
-              <User className="h-4 w-4" />
-            ) : mode === "phone-login" ? (
-              <Phone className="h-4 w-4" />
-            ) : mode === "email-register" ? (
-              <Mail className="h-4 w-4" />
-            ) : (
-              <LogIn className="h-4 w-4" />
-            )}
             <span className="text-sm font-semibold">
               {user ? "当前账号" : mode === "email-register" ? "注册账号" : "登录账号"}
             </span>
@@ -426,7 +417,6 @@ export function LoginPanel() {
                 <form onSubmit={handlePhoneLogin} className="flex flex-col gap-3">
                   <div>
                     <span className="mb-1 block text-xs text-neutral-500">
-                      <Phone className={cn("mr-1 inline", inputClass)} />
                       手机号
                     </span>
                     <input
