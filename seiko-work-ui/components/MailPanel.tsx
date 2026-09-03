@@ -164,7 +164,7 @@ export function MailPanel() {
             {unreadCount} 封未读
           </span>
         </div>
-        <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
           {mails.map((mail) => (
             <button
               key={mail.id}
@@ -179,6 +179,10 @@ export function MailPanel() {
               <span className="pointer-events-none absolute right-1 top-1 h-3 w-3 border-r border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
               <span className="pointer-events-none absolute bottom-1 left-1 h-3 w-3 border-b border-l border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
               <span className="pointer-events-none absolute bottom-1 right-1 h-3 w-3 border-b border-r border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              {/* 选中项：实体线段沿边框周长循环跑动（offset-path 运动路径） */}
+              {mail.id === selectedId && (
+                <span aria-hidden className="mail-runner" />
+              )}
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900/10 text-sm font-medium text-neutral-700">
                 {mail.fromName.slice(0, 1)}
               </span>

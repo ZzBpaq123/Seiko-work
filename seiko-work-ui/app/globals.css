@@ -38,3 +38,32 @@ body {
 canvas {
   display: block;
 }
+
+/* 选中卡片：实体线段沿边框循环跑动（offset-path 运动路径，无线段接缝/形变问题） */
+@keyframes runner-move {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+.mail-runner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 14px;
+  height: 1px;
+  border-radius: 1px;
+  background: rgba(23, 23, 23, 0.65);
+  offset-path: rect(1px calc(100% - 1px) calc(100% - 1px) 1px);
+  offset-anchor: 50% 50%;
+  offset-rotate: auto;
+  pointer-events: none;
+  animation: runner-move 2s linear infinite;
+}
+
+/* 浏览器不支持 offset-path 时不显示该线段（选中底色仍保留） */
+@supports not (offset-path: rect(0 0 0 0)) {
+  .mail-runner {
+    display: none;
+  }
+}
