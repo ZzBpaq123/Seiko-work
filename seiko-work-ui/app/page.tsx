@@ -4,6 +4,7 @@ import { MobiusBackground } from "@/components/MobiusBackground";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SideNav } from "@/components/SideNav";
 import { MailPanel } from "@/components/MailPanel";
+import { LoginPanel } from "@/components/LoginPanel";
 import { useHash } from "@/hooks/useHash";
 
 export default function Home() {
@@ -22,6 +23,7 @@ export default function Home() {
       <SiteHeader />
       <SideNav />
       {hash === "#mail" && <MailPanel />}
+      {hash === "#login" && <LoginPanel />}
     </>
   );
 }

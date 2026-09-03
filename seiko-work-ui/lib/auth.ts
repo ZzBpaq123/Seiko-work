@@ -1,0 +1,80 @@
+import { request } from "@/lib/axios";
+
+export interface UserVO {
+  id: number;
+  username: string;
+  email: string | null;
+  phone: string | null;
+  nickname: string | null;
+  avatar: string | null;
+  status: number;
+}
+
+export interface LoginVO {
+  token: string;
+  tokenName: string;
+  user: UserVO;
+}
+
+export interface EmailRegisterParams {
+  username: string;
+  email: string;
+  code: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export const TOKEN_KEY = "token";
+export const USER_KEY = "user";
+
+export function sendEmailCode(email: string) {
+  return request<void>({ method: "POST", url: "/auth/email/code", data: { email } });
+}
+
+export function emailRegister(params: EmailRegisterParams) {
+  return request<void>({ method: "POST", url: "/auth/email/register", data: params });
+}
+
+export function emailLogin(email: string, password: string) {
+  return request<LoginVO>({
+    method: "POST",
+    url: "/auth/email/login",
+    data: { email, password },
+  });
+}
+
+export function sendPhoneCode(phone: string) {
+  return request<void>({ method: "POST", url: "/auth/phone/code", data: { phone } });
+}
+
+export function phoneLogin(phone: string, code: string) {
+  return request<LoginVO>({ method: "POST", url: "/auth/phone/login", data: { phone, code } });
+}
+
+export function logout() {
+  return request<void>({ method: "POST", url: "/auth/logout" });
+}
+
+export function getCurrentUser() {
+  return request<UserVO>({ method: "GET", url: "/auth/info" });
+}
+
+export function saveLoginState(login: LoginVO) {
+  localStorage.setItem(TOKEN_KEY, login.token);
+  localStorage.setItem(USER_KEY, JSON.stringify(login.user));
+}
+
+export function clearLoginState() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+export function getStoredUser(): UserVO | null {
+  const raw = localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as UserVO;
+  } catch {
+    return null;
+  }
+}
