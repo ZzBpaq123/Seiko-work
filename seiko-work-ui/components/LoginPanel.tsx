@@ -23,7 +23,6 @@ type Mode = "email-login" | "email-register" | "phone-login";
 
 const MODE_TABS: { key: Mode; label: string }[] = [
   { key: "email-login", label: "邮箱登录" },
-  { key: "email-register", label: "邮箱注册" },
   { key: "phone-login", label: "手机登录" },
 ];
 
@@ -314,23 +313,25 @@ export function LoginPanel() {
             </div>
           ) : (
             <>
-              <div className="mb-5 flex rounded-lg border border-neutral-900/10 bg-neutral-900/5 p-1">
-                {MODE_TABS.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => switchMode(tab.key)}
-                    className={cn(
-                      "flex-1 rounded-md py-1.5 text-xs transition-colors",
-                      mode === tab.key
-                        ? "bg-white text-neutral-900 shadow-sm"
-                        : "text-neutral-500 hover:text-neutral-900"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              {mode !== "email-register" && (
+                <div className="mb-5 flex rounded-lg border border-neutral-900/10 bg-neutral-900/5 p-1">
+                  {MODE_TABS.map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => switchMode(tab.key)}
+                      className={cn(
+                        "flex-1 rounded-md py-1.5 text-xs transition-colors",
+                        mode === tab.key
+                          ? "bg-white text-neutral-900 shadow-sm"
+                          : "text-neutral-500 hover:text-neutral-900"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {error && (
                 <p className="mb-3 rounded-lg border border-red-900/15 bg-red-50/80 px-3 py-2 text-xs text-red-700">
@@ -444,6 +445,30 @@ export function LoginPanel() {
                     <SubmitButton loading={loading}>登录</SubmitButton>
                   </div>
                 </form>
+              )}
+
+              {mode !== "email-register" ? (
+                <p className="mt-4 text-center text-xs text-neutral-500">
+                  还没账号？
+                  <button
+                    type="button"
+                    onClick={() => switchMode("email-register")}
+                    className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
+                  >
+                    赶快注册...
+                  </button>
+                </p>
+              ) : (
+                <p className="mt-4 text-center text-xs text-neutral-500">
+                  已有账号
+                  <button
+                    type="button"
+                    onClick={() => switchMode("email-login")}
+                    className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
+                  >
+                    返回登录
+                  </button>
+                </p>
               )}
 
               <p className="mt-4 flex items-center justify-center gap-1 text-xs text-neutral-400">
