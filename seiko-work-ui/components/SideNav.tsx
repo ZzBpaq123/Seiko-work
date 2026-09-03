@@ -1,8 +1,6 @@
 "use client";
 
 import { CalendarDays, Home, LogIn, Mail } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import { useHash } from "@/hooks/useHash";
@@ -16,7 +14,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { key: "login", label: "登录", href: "#login", icon: LogIn },
-  { key: "home", label: "首页", href: "/", icon: Home },
+  { key: "home", label: "首页", href: "#", icon: Home },
   { key: "mail", label: "邮箱", href: "#mail", icon: Mail },
   { key: "schedule", label: "日程", href: "#schedule", icon: CalendarDays },
 ];
@@ -24,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
 function NavButton({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
   return (
-    <Link
+    <a
       href={item.href}
       aria-label={item.label}
       className={cn(
@@ -35,24 +33,19 @@ function NavButton({ item, active }: { item: NavItem; active: boolean }) {
       )}
     >
       <Icon className="h-5 w-5" />
-      <span
-        className={cn(
-          "pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-md border border-neutral-900/10 bg-white/90 px-2 py-1 text-xs text-neutral-800 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100",
-          active && "opacity-0 group-hover:opacity-100"
-        )}
-      >
+      <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-md border border-neutral-900/10 bg-white/90 px-2 py-1 text-xs text-neutral-800 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
         {item.label}
       </span>
-    </Link>
+    </a>
   );
 }
 
 export function SideNav() {
-  const pathname = usePathname();
   const hash = useHash();
 
+  // hash 为空（或仅剩 "#"）表示首页
   const isActive = (item: NavItem) =>
-    item.href.startsWith("#") ? hash === item.href : pathname === item.href;
+    item.href === "#" ? !hash || hash === "#" : hash === item.href;
 
   return (
     <nav

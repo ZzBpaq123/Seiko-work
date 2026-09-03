@@ -164,7 +164,7 @@ export function MailPanel() {
             {unreadCount} 封未读
           </span>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {mails.map((mail) => (
             <button
               key={mail.id}
