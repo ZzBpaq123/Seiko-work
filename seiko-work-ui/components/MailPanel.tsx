@@ -170,10 +170,15 @@ export function MailPanel() {
               key={mail.id}
               onClick={() => selectMail(mail.id)}
               className={cn(
-                "flex w-full items-start gap-3 border-b border-neutral-900/5 px-4 py-3 text-left transition-colors",
+                "group relative flex w-full items-start gap-3 border-b border-neutral-900/5 px-4 py-3 text-left transition-colors",
                 mail.id === selectedId ? "bg-neutral-900/5" : "hover:bg-neutral-900/3"
               )}
             >
+              {/* 四角断开式角标：仅悬停时显示，四边中段留空 */}
+              <span className="pointer-events-none absolute left-1 top-1 h-3 w-3 border-l border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              <span className="pointer-events-none absolute right-1 top-1 h-3 w-3 border-r border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              <span className="pointer-events-none absolute bottom-1 left-1 h-3 w-3 border-b border-l border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              <span className="pointer-events-none absolute bottom-1 right-1 h-3 w-3 border-b border-r border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900/10 text-sm font-medium text-neutral-700">
                 {mail.fromName.slice(0, 1)}
               </span>
