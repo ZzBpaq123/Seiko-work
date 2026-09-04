@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { request } from "@/lib/axios";
 
 export interface UserVO {
@@ -26,6 +27,11 @@ export interface EmailRegisterParams {
 
 export const TOKEN_KEY = "token";
 export const USER_KEY = "user";
+export const AUTH_CHANGED_EVENT = "auth-changed";
+
+function notifyAuthChanged() {
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+}
 
 export function sendEmailCode(email: string) {
   return request<void>({ method: "POST", url: "/auth/email/code", data: { email } });
@@ -62,11 +68,13 @@ export function getCurrentUser() {
 export function saveLoginState(login: LoginVO) {
   localStorage.setItem(TOKEN_KEY, login.token);
   localStorage.setItem(USER_KEY, JSON.stringify(login.user));
+  notifyAuthChanged();
 }
 
 export function clearLoginState() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  notifyAuthChanged();
 }
 
 export function getStoredUser(): UserVO | null {
@@ -77,4 +85,21 @@ export function getStoredUser(): UserVO | null {
   } catch {
     return null;
   }
+}
+
+export function useAuthUser(): UserVO | null {
+  const [user, setUser] = useState<UserVO | null>(null);
+
+  useEffect(() => {
+    const sync = () => setUser(getStoredUser());
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener(AUTH_CHANGED_EVENT, sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(AUTH_CHANGED_EVENT, sync);
+    };
+  }, []);
+
+  return user;
 }
