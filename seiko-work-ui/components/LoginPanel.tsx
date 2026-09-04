@@ -156,6 +156,7 @@ export function LoginPanel() {
       saveLoginState(login);
       setUser(login.user);
       setNotice("登录成功");
+      clearHash();
     } catch (err) {
       fail(err);
     } finally {
@@ -243,6 +244,7 @@ export function LoginPanel() {
       saveLoginState(login);
       setUser(login.user);
       setNotice("登录成功");
+      clearHash();
     } catch (err) {
       fail(err);
     } finally {
