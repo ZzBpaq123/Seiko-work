@@ -18,6 +18,7 @@ import {
   sendEmailCode,
   sendPhoneCode,
 } from "@/lib/auth";
+import { toast } from "@/lib/toast";
 
 type Mode = "email-login" | "email-register" | "phone-login";
 
@@ -97,9 +98,6 @@ export function LoginPanel() {
   const [user, setUser] = useState<UserVO | null>(null);
   const [checked, setChecked] = useState(false);
   const [mode, setMode] = useState<Mode>("email-login");
-
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   // 邮箱登录
@@ -136,26 +134,20 @@ export function LoginPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const fail = (e: unknown) => setError(e instanceof Error ? e.message : "操作失败，请稍后重试");
+  const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "操作失败，请稍后重试");
 
-  const switchMode = (next: Mode) => {
-    setMode(next);
-    setError("");
-    setNotice("");
-  };
+  const switchMode = (next: Mode) => setMode(next);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setNotice("");
-    if (!EMAIL_RE.test(loginEmail)) return setError("邮箱格式不正确");
-    if (!loginPassword) return setError("请输入密码");
+    if (!EMAIL_RE.test(loginEmail)) return toast.error("邮箱格式不正确");
+    if (!loginPassword) return toast.error("请输入密码");
     setLoading(true);
     try {
       const login = await emailLogin(loginEmail, loginPassword);
       saveLoginState(login);
       setUser(login.user);
-      setNotice("登录成功");
+      toast.success("登录成功");
       clearHash();
     } catch (err) {
       fail(err);
@@ -165,15 +157,13 @@ export function LoginPanel() {
   };
 
   const handleSendEmailCode = async (): Promise<boolean> => {
-    setError("");
-    setNotice("");
     if (!EMAIL_RE.test(regEmail)) {
-      setError("请输入正确的邮箱后再获取验证码");
+      toast.error("请输入正确的邮箱后再获取验证码");
       return false;
     }
     try {
       await sendEmailCode(regEmail);
-      setNotice("验证码已发送，5 分钟内有效");
+      toast.success("验证码已发送，5 分钟内有效");
       return true;
     } catch (err) {
       fail(err);
@@ -183,15 +173,13 @@ export function LoginPanel() {
 
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setNotice("");
     if (regUsername.trim().length < 2 || regUsername.trim().length > 50)
-      return setError("用户名长度需为 2-50 个字符");
-    if (!EMAIL_RE.test(regEmail)) return setError("邮箱格式不正确");
-    if (!CODE_RE.test(regCode)) return setError("验证码为 6 位数字");
+      return toast.error("用户名长度需为 2-50 个字符");
+    if (!EMAIL_RE.test(regEmail)) return toast.error("邮箱格式不正确");
+    if (!CODE_RE.test(regCode)) return toast.error("验证码为 6 位数字");
     if (regPassword.length < 6 || regPassword.length > 20)
-      return setError("密码长度需为 6-20 个字符");
-    if (regPassword !== regConfirm) return setError("两次输入的密码不一致");
+      return toast.error("密码长度需为 6-20 个字符");
+    if (regPassword !== regConfirm) return toast.error("两次输入的密码不一致");
     setLoading(true);
     try {
       await emailRegister({
@@ -207,7 +195,7 @@ export function LoginPanel() {
       setRegPassword("");
       setRegConfirm("");
       switchMode("email-login");
-      setNotice("注册成功，请登录");
+      toast.success("注册成功，请登录");
     } catch (err) {
       fail(err);
     } finally {
@@ -216,15 +204,13 @@ export function LoginPanel() {
   };
 
   const handleSendPhoneCode = async (): Promise<boolean> => {
-    setError("");
-    setNotice("");
     if (!PHONE_RE.test(phone)) {
-      setError("请输入正确的手机号后再获取验证码");
+      toast.error("请输入正确的手机号后再获取验证码");
       return false;
     }
     try {
       await sendPhoneCode(phone);
-      setNotice("验证码已发送，5 分钟内有效");
+      toast.success("验证码已发送，5 分钟内有效");
       return true;
     } catch (err) {
       fail(err);
@@ -234,16 +220,14 @@ export function LoginPanel() {
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setNotice("");
-    if (!PHONE_RE.test(phone)) return setError("手机号格式不正确");
-    if (!CODE_RE.test(phoneCode)) return setError("验证码为 6 位数字");
+    if (!PHONE_RE.test(phone)) return toast.error("手机号格式不正确");
+    if (!CODE_RE.test(phoneCode)) return toast.error("验证码为 6 位数字");
     setLoading(true);
     try {
       const login = await phoneLogin(phone, phoneCode);
       saveLoginState(login);
       setUser(login.user);
-      setNotice("登录成功");
+      toast.success("登录成功");
       clearHash();
     } catch (err) {
       fail(err);
@@ -253,8 +237,6 @@ export function LoginPanel() {
   };
 
   const handleLogout = async () => {
-    setError("");
-    setNotice("");
     try {
       await logout();
     } catch {
@@ -264,6 +246,7 @@ export function LoginPanel() {
     setUser(null);
     setLoginPassword("");
     setPhoneCode("");
+    toast.info("已退出登录");
   };
 
   const inputClass = "h-4 w-4 text-neutral-600";
@@ -333,17 +316,6 @@ export function LoginPanel() {
                     </button>
                   ))}
                 </div>
-              )}
-
-              {error && (
-                <p className="mb-3 rounded-lg border border-red-900/15 bg-red-50/80 px-3 py-2 text-xs text-red-700">
-                  {error}
-                </p>
-              )}
-              {notice && (
-                <p className="mb-3 rounded-lg border border-emerald-900/15 bg-emerald-50/80 px-3 py-2 text-xs text-emerald-700">
-                  {notice}
-                </p>
               )}
 
               {mode === "email-login" && (

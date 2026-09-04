@@ -61,6 +61,22 @@ canvas {
   animation: runner-move 2s linear infinite;
 }
 
+/* Toast：从屏幕顶部中央滑入 */
+@keyframes toast-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.toast-pop {
+  animation: toast-pop 0.25s ease-out forwards;
+}
+
 /* 浏览器不支持 offset-path 时不显示该线段（选中底色仍保留） */
 @supports not (offset-path: rect(0 0 0 0)) {
   .mail-runner {
