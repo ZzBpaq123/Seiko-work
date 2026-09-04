@@ -152,7 +152,7 @@ export function MailPanel() {
   }, []);
 
   return (
-    <div className="fixed bottom-6 left-6 right-24 top-24 z-10 flex gap-4">
+    <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex gap-4">
       {/* 左：邮件列表 */}
       <aside className="flex w-85 shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
