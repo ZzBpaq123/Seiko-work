@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Inbox, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { clearHash } from "@/hooks/useHash";
+import { clearHash, useHash } from "@/hooks/useHash";
+import { PanelReveal } from "@/components/PanelReveal";
 
 type Mail = {
   id: number;
@@ -151,7 +152,10 @@ export function MailPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const open = useHash() === "#mail";
+
   return (
+    <PanelReveal open={open}>
     <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex gap-4">
       {/* 左：邮件列表 */}
       <aside className="flex w-85 shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
@@ -257,5 +261,6 @@ export function MailPanel() {
         )}
       </section>
     </div>
+    </PanelReveal>
   );
 }

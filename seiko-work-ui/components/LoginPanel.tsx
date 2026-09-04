@@ -3,7 +3,7 @@
 import { useEffect, useState, type InputHTMLAttributes } from "react";
 import { KeyRound, Loader2, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { clearHash } from "@/hooks/useHash";
+import { clearHash, useHash } from "@/hooks/useHash";
 import {
   TOKEN_KEY,
   type UserVO,
@@ -19,6 +19,7 @@ import {
   sendPhoneCode,
 } from "@/lib/auth";
 import { toast } from "@/lib/toast";
+import { PanelReveal } from "@/components/PanelReveal";
 
 type Mode = "email-login" | "email-register" | "phone-login";
 
@@ -251,8 +252,11 @@ export function LoginPanel() {
 
   const inputClass = "h-4 w-4 text-neutral-600";
 
+  const open = useHash() === "#login";
+
   return (
-    <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex items-center justify-center">
+    <PanelReveal open={open}>
+      <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex items-center justify-center">
       <section className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
@@ -454,5 +458,6 @@ export function LoginPanel() {
         </div>
       </section>
     </div>
+    </PanelReveal>
   );
 }
