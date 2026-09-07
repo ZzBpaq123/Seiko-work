@@ -15,6 +15,7 @@ import com.seiko.work.dto.ResetPasswordDTO;
 import com.seiko.work.dto.SendEmailCodeDTO;
 import com.seiko.work.dto.SendPhoneCodeDTO;
 import com.seiko.work.dto.SendResetCodeDTO;
+import com.seiko.work.dto.UserProfileUpdateDTO;
 import com.seiko.work.entity.User;
 import com.seiko.work.service.AuthService;
 import com.seiko.work.service.SmsService;
@@ -370,6 +371,52 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserVO updateProfile(UserProfileUpdateDTO dto) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        User user = userService.getById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.TOKEN_INVALID);
+        }
+
+        String username = dto.getUsername() != null && !dto.getUsername().isBlank() ? dto.getUsername().trim() : null;
+        if (username != null && !username.equals(user.getUsername())) {
+            User exists = userService.getByUsername(username);
+            if (exists != null && !exists.getId().equals(userId)) {
+                throw new BusinessException(ResultCode.USERNAME_EXISTS);
+            }
+            user.setUsername(username);
+        }
+
+        String email = dto.getEmail() != null && !dto.getEmail().isBlank() ? dto.getEmail().trim() : null;
+        if (email != null && !email.equals(user.getEmail())) {
+            User exists = userService.getByEmail(email);
+            if (exists != null && !exists.getId().equals(userId)) {
+                throw new BusinessException(ResultCode.CONFLICT.getCode(), "该邮箱已被其他账号绑定");
+            }
+            verifyCode(RedisKey.EMAIL_CODE.formatted(email), dto.getEmailCode());
+            user.setEmail(email);
+        }
+
+        String phone = dto.getPhone() != null && !dto.getPhone().isBlank() ? dto.getPhone().trim() : null;
+        if (phone != null && !phone.equals(user.getPhone())) {
+            User exists = userService.getByPhone(phone);
+            if (exists != null && !exists.getId().equals(userId)) {
+                throw new BusinessException(ResultCode.CONFLICT.getCode(), "该手机号已被其他账号绑定");
+            }
+            verifyCode(RedisKey.PHONE_CODE.formatted(phone), dto.getPhoneCode());
+            user.setPhone(phone);
+        }
+
+        String avatar = dto.getAvatar() != null && !dto.getAvatar().isBlank() ? dto.getAvatar().trim() : null;
+        user.setAvatar(avatar);
+
+        userService.updateById(user);
+        log.info("用户 {} 修改个人信息成功", user.getUsername());
+        return convertToVO(user);
+    }
+
+    @Override
     public void logout() {
         StpUtil.logout();
     }
@@ -384,6 +431,17 @@ public class AuthServiceImpl implements AuthService {
         DesensitizedUtil.email(user.getEmail());
         DesensitizedUtil.mobilePhone(user.getPhone());
         return convertToVO(user);
+    }
+
+    private void verifyCode(String codeKey, String code) {
+        if (code == null || code.isBlank()) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "验证码不能为空");
+        }
+        String cachedCode = redisTemplate.opsForValue().get(codeKey);
+        if (cachedCode == null || !cachedCode.equals(code)) {
+            throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
+        }
+        redisTemplate.delete(codeKey);
     }
 
     private void checkLoginLock(String email, String ip) {

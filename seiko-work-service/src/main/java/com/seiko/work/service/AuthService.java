@@ -9,6 +9,7 @@ import com.seiko.work.dto.ResetPasswordDTO;
 import com.seiko.work.dto.SendEmailCodeDTO;
 import com.seiko.work.dto.SendPhoneCodeDTO;
 import com.seiko.work.dto.SendResetCodeDTO;
+import com.seiko.work.dto.UserProfileUpdateDTO;
 import com.seiko.work.vo.LoginVO;
 import com.seiko.work.vo.UserVO;
 
@@ -81,6 +82,14 @@ public interface AuthService {
      * @param dto 请求参数
      */
     void changePassword(ChangePasswordDTO dto);
+
+    /**
+     * 修改当前登录用户信息（头像、用户名、邮箱、手机号）
+     *
+     * @param dto 请求参数
+     * @return 更新后的用户信息
+     */
+    UserVO updateProfile(UserProfileUpdateDTO dto);
 
     /**
      * 用户登出

@@ -10,6 +10,7 @@ import com.seiko.work.dto.ResetPasswordDTO;
 import com.seiko.work.dto.SendEmailCodeDTO;
 import com.seiko.work.dto.SendPhoneCodeDTO;
 import com.seiko.work.dto.SendResetCodeDTO;
+import com.seiko.work.dto.UserProfileUpdateDTO;
 import com.seiko.work.service.AuthService;
 import com.seiko.work.vo.LoginVO;
 import com.seiko.work.vo.UserVO;
@@ -21,6 +22,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -95,6 +97,12 @@ public class AuthController {
     public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
         authService.changePassword(dto);
         return Result.success();
+    }
+
+    @PutMapping("/profile")
+    @Operation(summary = "修改当前登录用户信息（头像、用户名、邮箱、手机号）")
+    public Result<UserVO> updateProfile(@Valid @RequestBody UserProfileUpdateDTO dto) {
+        return Result.success(authService.updateProfile(dto));
     }
 
     @PostMapping("/logout")

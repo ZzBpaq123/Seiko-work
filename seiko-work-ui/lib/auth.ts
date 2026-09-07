@@ -33,6 +33,15 @@ export interface ResetPasswordParams {
   confirmPassword: string;
 }
 
+export interface UpdateProfileParams {
+  username?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  emailCode?: string;
+  phoneCode?: string;
+}
+
 export const TOKEN_KEY = "token";
 export const USER_KEY = "user";
 export const AUTH_CHANGED_EVENT = "auth-changed";
@@ -81,6 +90,10 @@ export function getCurrentUser() {
   return request<UserVO>({ method: "GET", url: "/auth/info" });
 }
 
+export function updateProfile(params: UpdateProfileParams) {
+  return request<UserVO>({ method: "PUT", url: "/auth/profile", data: params });
+}
+
 export function saveLoginState(login: LoginVO) {
   localStorage.setItem(TOKEN_KEY, login.token);
   localStorage.setItem(USER_KEY, JSON.stringify(login.user));
@@ -90,6 +103,11 @@ export function saveLoginState(login: LoginVO) {
 export function clearLoginState() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  notifyAuthChanged();
+}
+
+export function updateStoredUser(user: UserVO) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
   notifyAuthChanged();
 }
 

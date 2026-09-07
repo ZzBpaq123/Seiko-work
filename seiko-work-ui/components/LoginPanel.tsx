@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type InputHTMLAttributes } from "react";
-import { KeyRound, Loader2, LogOut, X } from "lucide-react";
+import { KeyRound, Loader2, LogOut, Pencil, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearHash, useHash } from "@/hooks/useHash";
 import {
@@ -19,6 +19,8 @@ import {
   sendEmailCode,
   sendPhoneCode,
   sendResetCode,
+  updateProfile,
+  updateStoredUser,
 } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 import { PanelReveal } from "@/components/PanelReveal";
@@ -127,6 +129,16 @@ export function LoginPanel() {
   const [forgotPassword, setForgotPassword] = useState("");
   const [forgotConfirm, setForgotConfirm] = useState("");
 
+  // 个人资料编辑
+  const [editing, setEditing] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileAvatar, setProfileAvatar] = useState("");
+  const [profileUsername, setProfileUsername] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [profileEmailCode, setProfileEmailCode] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [profilePhoneCode, setProfilePhoneCode] = useState("");
+
   useEffect(() => {
     if (!localStorage.getItem(TOKEN_KEY)) {
       setChecked(true);
@@ -137,6 +149,17 @@ export function LoginPanel() {
       .catch(() => clearLoginState())
       .finally(() => setChecked(true));
   }, []);
+
+  // 登录用户信息加载/更新后，同步资料表单初始值（编辑中不覆盖已输入内容）
+  useEffect(() => {
+    if (!user || editing) return;
+    setProfileAvatar(user.avatar ?? "");
+    setProfileUsername(user.username);
+    setProfileEmail(user.email ?? "");
+    setProfileEmailCode("");
+    setProfilePhone(user.phone ?? "");
+    setProfilePhoneCode("");
+  }, [user, editing]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -309,9 +332,90 @@ export function LoginPanel() {
     }
     clearLoginState();
     setUser(null);
+    setEditing(false);
     setLoginPassword("");
     setPhoneCode("");
     toast.info("已退出登录");
+  };
+
+  const emailChanged =
+    profileEmail.trim() !== "" && profileEmail.trim() !== (user?.email ?? "");
+  const phoneChanged =
+    profilePhone.trim() !== "" && profilePhone.trim() !== (user?.phone ?? "");
+
+  const enterEdit = () => {
+    if (!user) return;
+    setProfileAvatar(user.avatar ?? "");
+    setProfileUsername(user.username);
+    setProfileEmail(user.email ?? "");
+    setProfileEmailCode("");
+    setProfilePhone(user.phone ?? "");
+    setProfilePhoneCode("");
+    setEditing(true);
+  };
+
+  const handleSendProfileEmailCode = async (): Promise<boolean> => {
+    if (!EMAIL_RE.test(profileEmail.trim())) {
+      toast.error("请输入正确的新邮箱后再获取验证码");
+      return false;
+    }
+    try {
+      await sendEmailCode(profileEmail.trim());
+      toast.success("验证码已发送，5 分钟内有效");
+      return true;
+    } catch (err) {
+      fail(err);
+      return false;
+    }
+  };
+
+  const handleSendProfilePhoneCode = async (): Promise<boolean> => {
+    if (!PHONE_RE.test(profilePhone.trim())) {
+      toast.error("请输入正确的新手机号后再获取验证码");
+      return false;
+    }
+    try {
+      await sendPhoneCode(profilePhone.trim());
+      toast.success("验证码已发送，5 分钟内有效");
+      return true;
+    } catch (err) {
+      fail(err);
+      return false;
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const username = profileUsername.trim();
+    const email = profileEmail.trim();
+    const phone = profilePhone.trim();
+    if (username.length < 2 || username.length > 30)
+      return toast.error("用户名长度需为 2-30 个字符");
+    if (email && !EMAIL_RE.test(email)) return toast.error("邮箱格式不正确");
+    if (phone && !PHONE_RE.test(phone)) return toast.error("手机号格式不正确");
+    if (emailChanged && !CODE_RE.test(profileEmailCode))
+      return toast.error("请输入新邮箱的 6 位验证码");
+    if (phoneChanged && !CODE_RE.test(profilePhoneCode))
+      return toast.error("请输入新手机号的 6 位验证码");
+    setSavingProfile(true);
+    try {
+      const updated = await updateProfile({
+        username,
+        email,
+        phone,
+        avatar: profileAvatar.trim(),
+        ...(emailChanged ? { emailCode: profileEmailCode } : {}),
+        ...(phoneChanged ? { phoneCode: profilePhoneCode } : {}),
+      });
+      setUser(updated);
+      updateStoredUser(updated);
+      setEditing(false);
+      toast.success("资料已保存");
+    } catch (err) {
+      fail(err);
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const inputClass = "h-4 w-4 text-neutral-600";
@@ -325,7 +429,7 @@ export function LoginPanel() {
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
             <span className="text-sm font-semibold">
-              {user ? "个人中心" : mode === "email-register" ? "注册账号" : mode === "forgot-password" ? "找回密码" : "登录账号"}
+              {user ? (editing ? "编辑资料" : "个人中心") : mode === "email-register" ? "注册账号" : mode === "forgot-password" ? "找回密码" : "登录账号"}
             </span>
           </div>
           <button
@@ -344,25 +448,131 @@ export function LoginPanel() {
               正在检查登录状态…
             </div>
           ) : user ? (
-            <div className="flex flex-col items-center gap-4 py-4">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-900/10 text-xl font-medium text-neutral-700">
-                {(user.nickname || user.username).slice(0, 1)}
-              </span>
-              <div className="text-center">
-                <p className="text-base font-semibold text-neutral-900">
-                  {user.nickname || user.username}
-                </p>
-                <p className="mt-0.5 text-xs text-neutral-500">
-                  {user.email || user.phone || ""}
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 rounded-lg border border-neutral-900/15 bg-white/60 px-4 py-2 text-sm text-neutral-700 transition-colors hover:border-neutral-900"
-              >
-                <LogOut className="h-4 w-4" />
-                退出登录
-              </button>
+            <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto py-2">
+              {editing ? (
+                <form onSubmit={handleUpdateProfile} className="flex flex-col gap-3">
+                <Field
+                  label="头像链接"
+                  placeholder="https://example.com/avatar.png"
+                  value={profileAvatar}
+                  onChange={(e) => setProfileAvatar(e.target.value)}
+                />
+                <Field
+                  label="用户名"
+                  placeholder="2-30 个字符"
+                  value={profileUsername}
+                  onChange={(e) => setProfileUsername(e.target.value)}
+                />
+                <Field
+                  label="邮箱"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={profileEmail}
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                />
+                {emailChanged && (
+                  <div>
+                    <span className="mb-1 block text-xs text-neutral-500">
+                      邮箱验证码（已发送至新邮箱）
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        value={profileEmailCode}
+                        onChange={(e) => setProfileEmailCode(e.target.value)}
+                        placeholder="6 位数字"
+                        maxLength={6}
+                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                      />
+                      <SendCodeButton onSend={handleSendProfileEmailCode} disabled={savingProfile} />
+                    </div>
+                  </div>
+                )}
+                <Field
+                  label="手机号"
+                  type="tel"
+                  placeholder="11 位手机号"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                />
+                {phoneChanged && (
+                  <div>
+                    <span className="mb-1 block text-xs text-neutral-500">
+                      手机验证码（已发送至新手机号）
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        value={profilePhoneCode}
+                        onChange={(e) => setProfilePhoneCode(e.target.value)}
+                        placeholder="6 位数字"
+                        maxLength={6}
+                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                      />
+                      <SendCodeButton onSend={handleSendProfilePhoneCode} disabled={savingProfile} />
+                    </div>
+                  </div>
+                )}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(false)}
+                      className="shrink-0 rounded-lg border border-neutral-900/15 bg-white/60 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:border-neutral-900"
+                    >
+                      返回
+                    </button>
+                    <div className="flex-1">
+                      <SubmitButton loading={savingProfile}>保存修改</SubmitButton>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center gap-3">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt="头像"
+                        className="h-16 w-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-900/10 text-xl font-medium text-neutral-700">
+                        {(user.nickname || user.username).slice(0, 1)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col divide-y divide-neutral-900/10 rounded-lg border border-neutral-900/10 bg-white/40 text-sm">
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-neutral-500">用户名</span>
+                      <span className="text-neutral-900">{user.username}</span>
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-neutral-500">邮箱</span>
+                      <span className="text-neutral-900">{user.email || "未绑定"}</span>
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-neutral-500">手机号</span>
+                      <span className="text-neutral-900">{user.phone || "未绑定"}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={enterEdit}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-50 transition-opacity"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      编辑资料
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-900/15 bg-white/60 px-4 py-2 text-sm text-neutral-700 transition-colors hover:border-neutral-900"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      退出登录
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <>
