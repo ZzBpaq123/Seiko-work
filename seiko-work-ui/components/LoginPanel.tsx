@@ -15,13 +15,17 @@ import {
   logout,
   phoneLogin,
   saveLoginState,
+  resetPassword,
   sendEmailCode,
   sendPhoneCode,
+  sendResetCode,
 } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 import { PanelReveal } from "@/components/PanelReveal";
 
-type Mode = "email-login" | "email-register" | "phone-login";
+type Mode = "email-login" | "email-register" | "phone-login" | "forgot-password";
+
+type ContactType = "email" | "phone";
 
 const MODE_TABS: { key: Mode; label: string }[] = [
   { key: "email-login", label: "邮箱登录" },
@@ -115,6 +119,13 @@ export function LoginPanel() {
   // 手机登录
   const [phone, setPhone] = useState("");
   const [phoneCode, setPhoneCode] = useState("");
+
+  // 找回密码
+  const [forgotType, setForgotType] = useState<ContactType>("email");
+  const [forgotContact, setForgotContact] = useState("");
+  const [forgotCode, setForgotCode] = useState("");
+  const [forgotPassword, setForgotPassword] = useState("");
+  const [forgotConfirm, setForgotConfirm] = useState("");
 
   useEffect(() => {
     if (!localStorage.getItem(TOKEN_KEY)) {
@@ -237,6 +248,59 @@ export function LoginPanel() {
     }
   };
 
+  const handleSendForgotCode = async (): Promise<boolean> => {
+    if (forgotType === "email" && !EMAIL_RE.test(forgotContact)) {
+      toast.error("请输入正确的邮箱后再获取验证码");
+      return false;
+    }
+    if (forgotType === "phone" && !PHONE_RE.test(forgotContact)) {
+      toast.error("请输入正确的手机号后再获取验证码");
+      return false;
+    }
+    try {
+      await sendResetCode(
+        forgotType === "email" ? { email: forgotContact } : { phone: forgotContact }
+      );
+      toast.success("验证码已发送，5 分钟内有效");
+      return true;
+    } catch (err) {
+      fail(err);
+      return false;
+    }
+  };
+
+  const handleForgotReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (forgotType === "email" && !EMAIL_RE.test(forgotContact))
+      return toast.error("邮箱格式不正确");
+    if (forgotType === "phone" && !PHONE_RE.test(forgotContact))
+      return toast.error("手机号格式不正确");
+    if (!CODE_RE.test(forgotCode)) return toast.error("验证码为 6 位数字");
+    if (forgotPassword.length < 6 || forgotPassword.length > 20)
+      return toast.error("密码长度需为 6-20 个字符");
+    if (forgotPassword !== forgotConfirm) return toast.error("两次输入的密码不一致");
+    setLoading(true);
+    try {
+      await resetPassword({
+        ...(forgotType === "email" ? { email: forgotContact } : { phone: forgotContact }),
+        code: forgotCode,
+        password: forgotPassword,
+        confirmPassword: forgotConfirm,
+      });
+      setLoginEmail(forgotType === "email" ? forgotContact : "");
+      setLoginPassword("");
+      setForgotCode("");
+      setForgotPassword("");
+      setForgotConfirm("");
+      switchMode("email-login");
+      toast.success("密码重置成功，请使用新密码登录");
+    } catch (err) {
+      fail(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -261,11 +325,11 @@ export function LoginPanel() {
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
             <span className="text-sm font-semibold">
-              {user ? "当前账号" : mode === "email-register" ? "注册账号" : "登录账号"}
+              {user ? "当前账号" : mode === "email-register" ? "注册账号" : mode === "forgot-password" ? "找回密码" : "登录账号"}
             </span>
           </div>
           <button
-            onClick={clearHash}
+            onClick={mode === "forgot-password" ? () => switchMode("email-login") : clearHash}
             aria-label="关闭"
             className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
           >
@@ -302,7 +366,7 @@ export function LoginPanel() {
             </div>
           ) : (
             <>
-              {mode !== "email-register" && (
+              {mode !== "email-register" && mode !== "forgot-password" && (
                 <div className="mb-5 flex rounded-lg border border-neutral-900/10 bg-neutral-900/5 p-1">
                   {MODE_TABS.map((tab) => (
                     <button
@@ -338,6 +402,15 @@ export function LoginPanel() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                   />
+                  <div className="-mt-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => switchMode("forgot-password")}
+                      className="text-xs text-neutral-500 underline underline-offset-2 transition-opacity hover:text-neutral-900 hover:opacity-60"
+                    >
+                      忘记密码？
+                    </button>
+                  </div>
                   <div className="pt-1">
                     <SubmitButton loading={loading}>登录</SubmitButton>
                   </div>
@@ -425,34 +498,101 @@ export function LoginPanel() {
                 </form>
               )}
 
-              {mode !== "email-register" ? (
-                <p className="mt-4 text-center text-xs text-neutral-500">
-                  还没账号？
-                  <button
-                    type="button"
-                    onClick={() => switchMode("email-register")}
-                    className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
-                  >
-                    赶快注册...
-                  </button>
-                </p>
-              ) : (
-                <p className="mt-4 text-center text-xs text-neutral-500">
-                  已有账号
-                  <button
-                    type="button"
-                    onClick={() => switchMode("email-login")}
-                    className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
-                  >
-                    返回登录
-                  </button>
-                </p>
+              {mode === "forgot-password" && (
+                <form onSubmit={handleForgotReset} className="flex flex-col gap-3">
+                  <div className="mb-1 flex rounded-lg border border-neutral-900/10 bg-neutral-900/5 p-1">
+                    {(
+                      [
+                        { key: "email", label: "邮箱找回" },
+                        { key: "phone", label: "手机找回" },
+                      ] as { key: ContactType; label: string }[]
+                    ).map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setForgotType(tab.key)}
+                        className={cn(
+                          "flex-1 rounded-md py-1.5 text-xs transition-colors",
+                          forgotType === tab.key
+                            ? "bg-white text-neutral-900 shadow-sm"
+                            : "text-neutral-500 hover:text-neutral-900"
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <Field
+                    label={forgotType === "email" ? "邮箱" : "手机号"}
+                    type={forgotType === "email" ? "email" : "tel"}
+                    placeholder={forgotType === "email" ? "you@example.com" : "11 位手机号"}
+                    value={forgotContact}
+                    onChange={(e) => setForgotContact(e.target.value)}
+                  />
+                  <div>
+                    <span className="mb-1 block text-xs text-neutral-500">验证码</span>
+                    <div className="flex gap-2">
+                      <input
+                        value={forgotCode}
+                        onChange={(e) => setForgotCode(e.target.value)}
+                        placeholder="6 位数字"
+                        maxLength={6}
+                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                      />
+                      <SendCodeButton onSend={handleSendForgotCode} disabled={loading} />
+                    </div>
+                  </div>
+                  <Field
+                    label="新密码"
+                    type="password"
+                    placeholder="6-20 个字符"
+                    value={forgotPassword}
+                    onChange={(e) => setForgotPassword(e.target.value)}
+                  />
+                  <Field
+                    label="确认密码"
+                    type="password"
+                    placeholder="再次输入密码"
+                    value={forgotConfirm}
+                    onChange={(e) => setForgotConfirm(e.target.value)}
+                  />
+                  <div className="pt-1">
+                    <SubmitButton loading={loading}>重置密码</SubmitButton>
+                  </div>
+                </form>
               )}
 
-              <p className="mt-4 flex items-center justify-center gap-1 text-xs text-neutral-400">
-                <KeyRound className="h-3 w-3" />
-                登录即代表同意服务条款与隐私政策
-              </p>
+              {mode !== "forgot-password" &&
+                (mode === "email-login" || mode === "phone-login" ? (
+                  <p className="mt-4 text-center text-xs text-neutral-500">
+                    还没账号？
+                    <button
+                      type="button"
+                      onClick={() => switchMode("email-register")}
+                      className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
+                    >
+                      赶快注册...
+                    </button>
+                  </p>
+                ) : (
+                  <p className="mt-4 text-center text-xs text-neutral-500">
+                    已有账号
+                    <button
+                      type="button"
+                      onClick={() => switchMode("email-login")}
+                      className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
+                    >
+                      返回登录
+                    </button>
+                  </p>
+                ))}
+
+              {(mode === "email-login" || mode === "phone-login") && (
+                <p className="mt-4 flex items-center justify-center gap-1 text-xs text-neutral-400">
+                  <KeyRound className="h-3 w-3" />
+                  登录即代表同意服务条款与隐私政策
+                </p>
+              )}
             </>
           )}
         </div>

@@ -25,6 +25,14 @@ export interface EmailRegisterParams {
   confirmPassword: string;
 }
 
+export interface ResetPasswordParams {
+  email?: string;
+  phone?: string;
+  code: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export const TOKEN_KEY = "token";
 export const USER_KEY = "user";
 export const AUTH_CHANGED_EVENT = "auth-changed";
@@ -59,6 +67,14 @@ export function phoneLogin(phone: string, code: string) {
 
 export function logout() {
   return request<void>({ method: "POST", url: "/auth/logout" });
+}
+
+export function sendResetCode(params: { email?: string; phone?: string }) {
+  return request<void>({ method: "POST", url: "/auth/password/code", data: params });
+}
+
+export function resetPassword(params: ResetPasswordParams) {
+  return request<void>({ method: "POST", url: "/auth/password/reset", data: params });
 }
 
 export function getCurrentUser() {
