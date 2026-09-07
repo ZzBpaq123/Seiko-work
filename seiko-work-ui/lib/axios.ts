@@ -20,6 +20,7 @@ const ERROR_CODE_MAP: Record<number, string> = {
 };
 
 const BUSINESS_CODE_MAP: Record<number, string> = {
+  401: "登录已过期，请重新登录",
   1001: "用户名或密码错误",
   1002: "登录已过期，请重新登录",
   1003: "用户已被禁用",
@@ -67,7 +68,8 @@ http.interceptors.response.use(
   (response: AxiosResponse<Result>) => {
     const { data } = response;
     if (data.code !== 200) {
-      if (data.code === 1002) redirectToLogin();
+      // 1002 为 Token 失效，401 为 Sa-Token 过滤器未读到 token，均需重新登录
+      if (data.code === 1002 || data.code === 401) redirectToLogin();
       const message = BUSINESS_CODE_MAP[data.code] || data.message || "业务处理失败";
       return Promise.reject(new Error(message));
     }

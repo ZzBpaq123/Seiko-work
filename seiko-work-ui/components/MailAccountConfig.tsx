@@ -43,7 +43,8 @@ export function MailAccountConfig() {
           setSslEnable(acc.sslEnable ?? true);
         }
       })
-      .catch(() => toast.error("加载邮箱授权配置失败"))
+      // 邮箱授权为可选配置，未配置或服务异常时静默处理
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
