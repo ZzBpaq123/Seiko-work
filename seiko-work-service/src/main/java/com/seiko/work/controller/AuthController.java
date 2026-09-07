@@ -5,8 +5,10 @@ import com.seiko.work.dto.LoginDTO;
 import com.seiko.work.dto.PhoneLoginDTO;
 import com.seiko.work.dto.PhoneRegisterDTO;
 import com.seiko.work.dto.RegisterDTO;
+import com.seiko.work.dto.ResetPasswordDTO;
 import com.seiko.work.dto.SendEmailCodeDTO;
 import com.seiko.work.dto.SendPhoneCodeDTO;
+import com.seiko.work.dto.SendResetCodeDTO;
 import com.seiko.work.service.AuthService;
 import com.seiko.work.vo.LoginVO;
 import com.seiko.work.vo.UserVO;
@@ -71,6 +73,20 @@ public class AuthController {
     @Operation(summary = "手机号验证码登录")
     public Result<LoginVO> phoneLogin(@Valid @RequestBody PhoneLoginDTO dto) {
         return Result.success(authService.phoneLogin(dto));
+    }
+
+    @PostMapping("/password/code")
+    @Operation(summary = "发送找回密码验证码（邮箱或手机号）")
+    public Result<Void> sendResetCode(@Valid @RequestBody SendResetCodeDTO dto) {
+        authService.sendResetCode(dto);
+        return Result.success();
+    }
+
+    @PostMapping("/password/reset")
+    @Operation(summary = "找回密码（通过邮箱或手机验证码重置密码）")
+    public Result<Void> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
+        authService.resetPassword(dto);
+        return Result.success();
     }
 
     @PostMapping("/logout")

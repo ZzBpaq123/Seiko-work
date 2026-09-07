@@ -1,6 +1,7 @@
 package com.seiko.work.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.DesensitizedUtil;
 import com.seiko.work.base.ResultCode;
 import com.seiko.work.config.properties.SecurityProperties;
 import com.seiko.work.constant.RedisKey;
@@ -9,8 +10,10 @@ import com.seiko.work.dto.LoginDTO;
 import com.seiko.work.dto.PhoneLoginDTO;
 import com.seiko.work.dto.PhoneRegisterDTO;
 import com.seiko.work.dto.RegisterDTO;
+import com.seiko.work.dto.ResetPasswordDTO;
 import com.seiko.work.dto.SendEmailCodeDTO;
 import com.seiko.work.dto.SendPhoneCodeDTO;
+import com.seiko.work.dto.SendResetCodeDTO;
 import com.seiko.work.entity.User;
 import com.seiko.work.service.AuthService;
 import com.seiko.work.service.SmsService;
@@ -53,11 +56,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendEmailCode(SendEmailCodeDTO dto) {
+        doSendEmailCode(dto.getEmail());
+    }
+
+    private void doSendEmailCode(String email) {
         if (!Boolean.TRUE.equals(securityProperties.getEmailCode().getEnabled())) {
             throw new BusinessException(ResultCode.ERROR.getCode(), "邮箱验证码功能未启用");
         }
 
-        String email = dto.getEmail();
         String ip = IpUtils.getClientIp(request);
 
         String ipLockKey = RedisKey.EMAIL_IP_LOCK.formatted(ip);
@@ -178,11 +184,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendPhoneCode(SendPhoneCodeDTO dto) {
+        doSendPhoneCode(dto.getPhone());
+    }
+
+    private void doSendPhoneCode(String phone) {
         if (!Boolean.TRUE.equals(securityProperties.getPhoneCode().getEnabled())) {
             throw new BusinessException(ResultCode.ERROR.getCode(), "手机验证码功能未启用");
         }
 
-        String phone = dto.getPhone();
         String ip = IpUtils.getClientIp(request);
 
         String ipLockKey = RedisKey.PHONE_IP_LOCK.formatted(ip);
@@ -291,6 +300,54 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void sendResetCode(SendResetCodeDTO dto) {
+        String email = dto.getEmail();
+        if (email != null && !email.isBlank()) {
+            if (userService.getByEmail(email) == null) {
+                throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "该邮箱未注册");
+            }
+            doSendEmailCode(email);
+            return;
+        }
+        String phone = dto.getPhone();
+        if (userService.getByPhone(phone) == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "该手机号未注册");
+        }
+        doSendPhoneCode(phone);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(ResetPasswordDTO dto) {
+        String email = dto.getEmail();
+        User user;
+        String codeKey;
+        if (email != null && !email.isBlank()) {
+            user = userService.getByEmail(email);
+            codeKey = RedisKey.EMAIL_CODE.formatted(email);
+        } else {
+            String phone = dto.getPhone();
+            user = userService.getByPhone(phone);
+            codeKey = RedisKey.PHONE_CODE.formatted(phone);
+        }
+
+        if (user == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "账号不存在");
+        }
+
+        String cachedCode = redisTemplate.opsForValue().get(codeKey);
+        if (cachedCode == null || !cachedCode.equals(dto.getCode())) {
+            throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
+        }
+
+        user.setPassword(PasswordUtil.hash(dto.getPassword()));
+        userService.updateById(user);
+
+        redisTemplate.delete(codeKey);
+        StpUtil.logout(user.getId());
+    }
+
+    @Override
     public void logout() {
         StpUtil.logout();
     }
@@ -302,6 +359,8 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             throw new BusinessException(ResultCode.TOKEN_INVALID);
         }
+        DesensitizedUtil.email(user.getEmail());
+        DesensitizedUtil.mobilePhone(user.getPhone());
         return convertToVO(user);
     }
 

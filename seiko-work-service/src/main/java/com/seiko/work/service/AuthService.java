@@ -4,8 +4,10 @@ import com.seiko.work.dto.LoginDTO;
 import com.seiko.work.dto.PhoneLoginDTO;
 import com.seiko.work.dto.PhoneRegisterDTO;
 import com.seiko.work.dto.RegisterDTO;
+import com.seiko.work.dto.ResetPasswordDTO;
 import com.seiko.work.dto.SendEmailCodeDTO;
 import com.seiko.work.dto.SendPhoneCodeDTO;
+import com.seiko.work.dto.SendResetCodeDTO;
 import com.seiko.work.vo.LoginVO;
 import com.seiko.work.vo.UserVO;
 
@@ -59,11 +61,23 @@ public interface AuthService {
     LoginVO phoneLogin(PhoneLoginDTO dto);
 
     /**
-     * 用户登出
+     * 发送找回密码验证码（邮箱或手机号）
+     *
+     * @param dto 请求参数
      */
-    void logout();
+    void sendResetCode(SendResetCodeDTO dto);
 
     /**
+     * 找回密码（通过邮箱或手机验证码重置密码）
+     *
+     * @param dto 请求参数
+     */
+    void resetPassword(ResetPasswordDTO dto);
+
+    /**
+     * 用户登出
+     */
+    void logout();    /**
      * 获取当前登录用户信息
      *
      * @return 用户信息
