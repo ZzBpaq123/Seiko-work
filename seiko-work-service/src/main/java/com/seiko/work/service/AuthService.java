@@ -1,5 +1,6 @@
 package com.seiko.work.service;
 
+import com.seiko.work.dto.ChangePasswordDTO;
 import com.seiko.work.dto.LoginDTO;
 import com.seiko.work.dto.PhoneLoginDTO;
 import com.seiko.work.dto.PhoneRegisterDTO;
@@ -73,6 +74,13 @@ public interface AuthService {
      * @param dto 请求参数
      */
     void resetPassword(ResetPasswordDTO dto);
+
+    /**
+     * 修改密码（已登录用户，需验证原密码）
+     *
+     * @param dto 请求参数
+     */
+    void changePassword(ChangePasswordDTO dto);
 
     /**
      * 用户登出

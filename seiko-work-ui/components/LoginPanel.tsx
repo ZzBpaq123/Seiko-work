@@ -325,7 +325,7 @@ export function LoginPanel() {
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
             <span className="text-sm font-semibold">
-              {user ? "当前账号" : mode === "email-register" ? "注册账号" : mode === "forgot-password" ? "找回密码" : "登录账号"}
+              {user ? "个人中心" : mode === "email-register" ? "注册账号" : mode === "forgot-password" ? "找回密码" : "登录账号"}
             </span>
           </div>
           <button

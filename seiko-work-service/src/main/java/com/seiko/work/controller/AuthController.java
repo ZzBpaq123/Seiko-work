@@ -1,6 +1,7 @@
 package com.seiko.work.controller;
 
 import com.seiko.work.base.Result;
+import com.seiko.work.dto.ChangePasswordDTO;
 import com.seiko.work.dto.LoginDTO;
 import com.seiko.work.dto.PhoneLoginDTO;
 import com.seiko.work.dto.PhoneRegisterDTO;
@@ -86,6 +87,13 @@ public class AuthController {
     @Operation(summary = "找回密码（通过邮箱或手机验证码重置密码）")
     public Result<Void> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
         authService.resetPassword(dto);
+        return Result.success();
+    }
+
+    @PostMapping("/password/change")
+    @Operation(summary = "修改密码（需登录，验证原密码）")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        authService.changePassword(dto);
         return Result.success();
     }
 

@@ -6,6 +6,7 @@ import com.seiko.work.base.ResultCode;
 import com.seiko.work.config.properties.SecurityProperties;
 import com.seiko.work.constant.RedisKey;
 import com.seiko.work.exception.BusinessException;
+import com.seiko.work.dto.ChangePasswordDTO;
 import com.seiko.work.dto.LoginDTO;
 import com.seiko.work.dto.PhoneLoginDTO;
 import com.seiko.work.dto.PhoneRegisterDTO;
@@ -345,6 +346,27 @@ public class AuthServiceImpl implements AuthService {
 
         redisTemplate.delete(codeKey);
         StpUtil.logout(user.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(ChangePasswordDTO dto) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        User user = userService.getById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.TOKEN_INVALID);
+        }
+
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new BusinessException(ResultCode.ERROR.getCode(), "当前账号未设置密码，请使用找回密码功能");
+        }
+
+        if (!PasswordUtil.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new BusinessException(ResultCode.OLD_PASSWORD_ERROR);
+        }
+
+        user.setPassword(PasswordUtil.hash(dto.getPassword()));
+        userService.updateById(user);
     }
 
     @Override
