@@ -1,148 +1,84 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Inbox, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Inbox, Loader2, MailX, Paperclip, RotateCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearHash, useHash } from "@/hooks/useHash";
 import { PanelReveal } from "@/components/PanelReveal";
+import {
+  getMailDetail,
+  listMails,
+  markMailRead,
+  type MailMessage,
+} from "@/lib/mail";
+import { toast } from "@/lib/toast";
 
-type Mail = {
-  id: number;
-  fromName: string;
-  fromEmail: string;
-  subject: string;
-  snippet: string;
-  body: string[];
-  time: string;
-  unread: boolean;
-};
+function formatTime(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value.replace(" ", "T"));
+  if (Number.isNaN(date.getTime())) return value;
+  const now = new Date();
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const hhmm = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (sameDay(date, now)) return hhmm;
+  if (sameDay(date, yesterday)) return `昨天 ${hhmm}`;
+  if (date.getFullYear() === now.getFullYear()) return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+}
 
-const MOCK_MAILS: Mail[] = [
-  {
-    id: 1,
-    fromName: "张明",
-    fromEmail: "zhangming@seiko.com",
-    subject: "【评审通知】V2.3 版本需求评审会",
-    snippet: "各位同事好，V2.3 版本的需求评审会定于本周四下午两点在三号会议室举行…",
-    body: [
-      "各位同事好：",
-      "V2.3 版本的需求评审会定于本周四（9月10日）14:00 在三号会议室举行，届时请相关产品、设计、研发同学准时参加。",
-      "请参会同学提前阅读需求文档（链接见 wiki），并准备好各自模块的排期评估。会议预计持续一个半小时。",
-      "如有时间冲突无法参会，请提前与我联系。",
-      "—— 张明 · 产品部",
-    ],
-    time: "09:42",
-    unread: true,
-  },
-  {
-    id: 2,
-    fromName: "王莉",
-    fromEmail: "hr-wangli@seiko.com",
-    subject: "九月团建活动报名开始啦",
-    snippet: "秋高气爽，九月团建正式开始报名！本次目的地：莫干山，活动时间…",
-    body: [
-      "各位小伙伴：",
-      "秋高气爽，一年一度的秋季团建正式启动报名！本次活动定于 9月19日—9月20日，地点为莫干山，行程包含徒步、烧烤与篝火晚会。",
-      "请有意参加的同学在本周五前回复本邮件报名，并注明是否有饮食禁忌。家属同行请在报名时一并说明。",
-      "—— 人力资源部 王莉",
-    ],
-    time: "08:15",
-    unread: true,
-  },
-  {
-    id: 3,
-    fromName: "系统通知",
-    fromEmail: "no-reply@seiko.com",
-    subject: "你的账号密码即将过期",
-    snippet: "为保障账号安全，你的登录密码将于 7 天后过期，请尽快前往个人中心…",
-    body: [
-      "尊敬的用户：",
-      "为保障账号安全，你的登录密码将于 7 天（2026年9月10日）后过期。",
-      "请尽快前往「个人中心 → 安全设置」修改密码。密码需包含大小写字母、数字，长度不少于 8 位。",
-      "如非本人操作请忽略本邮件，如有疑问请联系 IT 支持。",
-      "—— Seiko Work 安全团队",
-    ],
-    time: "昨天 18:30",
-    unread: false,
-  },
-  {
-    id: 4,
-    fromName: "李强",
-    fromEmail: "liqiang@seiko.com",
-    subject: "莫比乌斯背景渲染性能优化方案",
-    snippet: "针对首页 3D 背景在低配设备上的帧率问题，我整理了三套优化方案…",
-    body: [
-      "Hi，",
-      "针对首页莫比乌斯环背景在低配设备上的帧率问题，我整理了三套优化方案：",
-      "1. 粒子数量按设备像素比动态降级（2000 → 800）；",
-      "2. 线框与表面合并为单次 draw call，减少状态切换；",
-      "3. 页面不可见时暂停 requestAnimationFrame 循环。",
-      "方案细节已写到技术文档，欢迎周三之前留言讨论。",
-      "—— 李强 · 前端组",
-    ],
-    time: "昨天 15:20",
-    unread: false,
-  },
-  {
-    id: 5,
-    fromName: "客户支持",
-    fromEmail: "support@seiko.com",
-    subject: "工单 #1024 有新的回复",
-    snippet: "你提交的工单「移动端登录页样式异常」已有新的客服回复，请查收…",
-    body: [
-      "你好：",
-      "你提交的工单 #1024「移动端登录页样式异常」已有新的回复。",
-      "客服回复：问题已定位为刘海屏安全区域适配缺失，修复版本预计本周五发布，届时会第一时间通知你验证。",
-      "你可以通过工单中心查看完整对话记录。",
-      "—— Seiko Work 客户支持",
-    ],
-    time: "周二 11:05",
-    unread: false,
-  },
-  {
-    id: 6,
-    fromName: "周报机器人",
-    fromEmail: "weekly-bot@seiko.com",
-    subject: "你有一份待填写的周报",
-    snippet: "本周工作即将结束，请及时填写本周周报，截止时间为周五 18:00…",
-    body: [
-      "提醒：",
-      "本周工作即将结束，你还没有提交周报。",
-      "请前往「工作台 → 周报」填写本周工作内容，截止时间为本周五 18:00。逾期将计入考核。",
-      "—— 周报机器人",
-    ],
-    time: "周一 17:45",
-    unread: false,
-  },
-  {
-    id: 7,
-    fromName: "GitHub",
-    fromEmail: "notifications@github.com",
-    subject: "[seiko-work] main 分支构建成功",
-    snippet: "Build #256 succeeded · refactor(work): 移除请假、工资和五险一金相关功能模块…",
-    body: [
-      "Build #256 succeeded.",
-      "Repository: seiko-work / seiko-work-ui",
-      "Branch: main",
-      "Latest commit: refactor(work): 移除请假、工资和五险一金相关功能模块",
-      "查看详情：https://github.com/seiko-work/seiko-work-ui/actions/runs/256",
-    ],
-    time: "9月1日",
-    unread: false,
-  },
-];
+function htmlToText(html: string) {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|tr|h[1-6])>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+function failMessage(e: unknown, fallback: string) {
+  return e instanceof Error ? e.message : fallback;
+}
 
 export function MailPanel() {
-  const [mails, setMails] = useState(MOCK_MAILS);
-  const [selectedId, setSelectedId] = useState(MOCK_MAILS[0].id);
+  const [mails, setMails] = useState<MailMessage[]>([]);
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [detail, setDetail] = useState<MailMessage | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  const unreadCount = useMemo(() => mails.filter((m) => m.unread).length, [mails]);
-  const selected = mails.find((m) => m.id === selectedId) ?? null;
+  const open = useHash() === "#mail";
 
-  const selectMail = (id: number) => {
-    setSelectedId(id);
-    setMails((prev) => prev.map((m) => (m.id === id ? { ...m, unread: false } : m)));
-  };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const list = await listMails();
+      setMails(list);
+    } catch (err) {
+      setLoadError(failMessage(err, "加载邮件失败"));
+      setMails([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelectedUid(null);
+    setDetail(null);
+    load();
+  }, [open, load]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -152,7 +88,32 @@ export function MailPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const open = useHash() === "#mail";
+  const unreadCount = useMemo(() => mails.filter((m) => !m.isRead).length, [mails]);
+  const selected = mails.find((m) => m.messageUid === selectedUid) ?? null;
+
+  const selectMail = (mail: MailMessage) => {
+    setSelectedUid(mail.messageUid);
+    setDetail(null);
+    setDetailLoading(true);
+    // 本地立即置为已读，服务端同步失败不影响展示
+    setMails((prev) =>
+      prev.map((m) => (m.messageUid === mail.messageUid ? { ...m, isRead: true } : m))
+    );
+    markMailRead(mail.messageUid).catch(() => {});
+    getMailDetail(mail.messageUid)
+      .then(setDetail)
+      .catch((err) => toast.error(failMessage(err, "加载邮件详情失败")))
+      .finally(() => setDetailLoading(false));
+  };
+
+  const displayDetail = detail ?? null;
+  const paragraphs = useMemo(() => {
+    if (!displayDetail) return [];
+    const text =
+      displayDetail.contentText ??
+      (displayDetail.contentHtml ? htmlToText(displayDetail.contentHtml) : "");
+    return text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  }, [displayDetail]);
 
   return (
     <PanelReveal open={open}>
@@ -163,70 +124,110 @@ export function MailPanel() {
           <div className="flex items-center gap-2 text-neutral-900">
             <Inbox className="h-4 w-4" />
             <span className="text-sm font-semibold">收件箱</span>
+            {!loading && !loadError && (
+              <span className="rounded-full bg-neutral-900/5 px-2 py-0.5 text-xs text-neutral-600">
+                {unreadCount} 封未读
+              </span>
+            )}
           </div>
-          <span className="rounded-full bg-neutral-900/5 px-2 py-0.5 text-xs text-neutral-600">
-            {unreadCount} 封未读
-          </span>
+          <button
+            onClick={load}
+            disabled={loading}
+            aria-label="刷新"
+            className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900 disabled:opacity-50"
+          >
+            <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {mails.map((mail) => (
-            <button
-              key={mail.id}
-              onClick={() => selectMail(mail.id)}
-              className={cn(
-                "group relative flex w-full items-start gap-3 border-b border-neutral-900/5 px-4 py-3 text-left transition-colors",
-                mail.id === selectedId ? "bg-neutral-900/5" : "hover:bg-neutral-900/3"
-              )}
-            >
-              {/* 四角断开式角标：仅悬停时显示，四边中段留空 */}
-              <span className="pointer-events-none absolute left-1 top-1 h-3 w-3 border-l border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-              <span className="pointer-events-none absolute right-1 top-1 h-3 w-3 border-r border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-              <span className="pointer-events-none absolute bottom-1 left-1 h-3 w-3 border-b border-l border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-              <span className="pointer-events-none absolute bottom-1 right-1 h-3 w-3 border-b border-r border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-              {/* 选中项：实体线段沿边框周长循环跑动（offset-path 运动路径） */}
-              {mail.id === selectedId && (
-                <span aria-hidden className="mail-runner" />
-              )}
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900/10 text-sm font-medium text-neutral-700">
-                {mail.fromName.slice(0, 1)}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-baseline justify-between gap-2">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              正在收取邮件…
+            </div>
+          ) : loadError ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-sm text-neutral-500">
+              <MailX className="h-6 w-6 text-neutral-400" />
+              <p className="max-w-55 text-center text-xs leading-5">{loadError}</p>
+              <button
+                onClick={load}
+                className="rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-1.5 text-xs text-neutral-700 transition-colors hover:border-neutral-900"
+              >
+                重试
+              </button>
+            </div>
+          ) : mails.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-400">
+              收件箱为空
+            </div>
+          ) : (
+            mails.map((mail) => (
+              <button
+                key={mail.messageUid}
+                onClick={() => selectMail(mail)}
+                className={cn(
+                  "group relative flex w-full items-start gap-3 border-b border-neutral-900/5 px-4 py-3 text-left transition-colors",
+                  mail.messageUid === selectedUid ? "bg-neutral-900/5" : "hover:bg-neutral-900/3"
+                )}
+              >
+                {/* 四角断开式角标：仅悬停时显示，四边中段留空 */}
+                <span className="pointer-events-none absolute left-1 top-1 h-3 w-3 border-l border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                <span className="pointer-events-none absolute right-1 top-1 h-3 w-3 border-r border-t border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                <span className="pointer-events-none absolute bottom-1 left-1 h-3 w-3 border-b border-l border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                <span className="pointer-events-none absolute bottom-1 right-1 h-3 w-3 border-b border-r border-neutral-900/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                {/* 选中项：实体线段沿边框周长循环跑动（offset-path 运动路径） */}
+                {mail.messageUid === selectedUid && (
+                  <span aria-hidden className="mail-runner" />
+                )}
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900/10 text-sm font-medium text-neutral-700">
+                  {(mail.fromName || mail.fromAddress || "?").slice(0, 1)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span
+                      className={cn(
+                        "truncate text-sm",
+                        !mail.isRead ? "font-semibold text-neutral-900" : "text-neutral-700"
+                      )}
+                    >
+                      {mail.fromName || mail.fromAddress || "未知发件人"}
+                    </span>
+                    <span className="shrink-0 text-xs text-neutral-400">
+                      {formatTime(mail.receiveTime)}
+                    </span>
+                  </span>
                   <span
                     className={cn(
-                      "truncate text-sm",
-                      mail.unread ? "font-semibold text-neutral-900" : "text-neutral-700"
+                      "mt-0.5 block truncate text-sm",
+                      !mail.isRead ? "font-medium text-neutral-900" : "text-neutral-600"
                     )}
                   >
-                    {mail.fromName}
+                    {mail.subject || "（无主题）"}
                   </span>
-                  <span className="shrink-0 text-xs text-neutral-400">{mail.time}</span>
+                  <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-neutral-400">
+                    {mail.hasAttachment && <Paperclip className="h-3 w-3 shrink-0" />}
+                    <span className="truncate">{mail.fromAddress || ""}</span>
+                  </span>
                 </span>
-                <span
-                  className={cn(
-                    "mt-0.5 block truncate text-sm",
-                    mail.unread ? "font-medium text-neutral-900" : "text-neutral-600"
-                  )}
-                >
-                  {mail.subject}
-                </span>
-                <span className="mt-0.5 block truncate text-xs text-neutral-400">
-                  {mail.snippet}
-                </span>
-              </span>
-              {mail.unread && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sky-500" />}
-            </button>
-          ))}
+                {!mail.isRead && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sky-500" />}
+              </button>
+            ))
+          )}
         </div>
       </aside>
 
       {/* 右：邮件详情 */}
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
-        {selected ? (
+        {detailLoading ? (
+          <div className="flex flex-1 items-center justify-center gap-2 text-sm text-neutral-500">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            正在加载邮件内容…
+          </div>
+        ) : displayDetail && selected ? (
           <>
             <div className="flex items-start justify-between gap-4 border-b border-neutral-900/10 px-6 py-4">
               <h2 className="text-lg font-semibold leading-snug text-neutral-900">
-                {selected.subject}
+                {displayDetail.subject || "（无主题）"}
               </h2>
               <button
                 onClick={clearHash}
@@ -238,25 +239,35 @@ export function MailPanel() {
             </div>
             <div className="flex items-center gap-3 border-b border-neutral-900/10 px-6 py-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900/10 text-sm font-medium text-neutral-700">
-                {selected.fromName.slice(0, 1)}
+                {(displayDetail.fromName || displayDetail.fromAddress || "?").slice(0, 1)}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-900">{selected.fromName}</p>
-                <p className="truncate text-xs text-neutral-400">&lt;{selected.fromEmail}&gt;</p>
+                <p className="text-sm font-medium text-neutral-900">
+                  {displayDetail.fromName || displayDetail.fromAddress || "未知发件人"}
+                </p>
+                <p className="truncate text-xs text-neutral-400">
+                  &lt;{displayDetail.fromAddress || "unknown"}&gt;
+                </p>
               </div>
-              <span className="ml-auto shrink-0 text-xs text-neutral-400">{selected.time}</span>
+              <span className="ml-auto shrink-0 text-xs text-neutral-400">
+                {formatTime(displayDetail.receiveTime)}
+              </span>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              {selected.body.map((paragraph, i) => (
-                <p key={i} className="mb-3 text-sm leading-7 text-neutral-700">
-                  {paragraph}
-                </p>
-              ))}
+              {paragraphs.length > 0 ? (
+                paragraphs.map((paragraph, i) => (
+                  <p key={i} className="mb-3 text-sm leading-7 text-neutral-700">
+                    {paragraph}
+                  </p>
+                ))
+              ) : (
+                <p className="text-sm text-neutral-400">（无正文内容）</p>
+              )}
             </div>
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center text-sm text-neutral-400">
-            选择一封邮件查看内容
+            {selected ? "加载邮件内容失败" : "选择一封邮件查看内容"}
           </div>
         )}
       </section>
