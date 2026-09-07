@@ -24,6 +24,7 @@ import {
 } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 import { PanelReveal } from "@/components/PanelReveal";
+import { MailAccountConfig } from "@/components/MailAccountConfig";
 
 type Mode = "email-login" | "email-register" | "phone-login" | "forgot-password";
 
@@ -425,7 +426,7 @@ export function LoginPanel() {
   return (
     <PanelReveal open={open}>
       <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex items-center justify-center">
-      <section className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
+      <section className="flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
             <span className="text-sm font-semibold">
@@ -448,7 +449,8 @@ export function LoginPanel() {
               正在检查登录状态…
             </div>
           ) : user ? (
-            <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto py-2">
+            <div className="grid max-h-[65vh] grid-cols-2 gap-6 overflow-y-auto py-2">
+              <div className="flex flex-col gap-4">
               {editing ? (
                 <form onSubmit={handleUpdateProfile} className="flex flex-col gap-3">
                 <Field
@@ -573,6 +575,10 @@ export function LoginPanel() {
                   </div>
                 </>
               )}
+              </div>
+              <div className="flex flex-col gap-4 border-l border-neutral-900/10 pl-6">
+                <MailAccountConfig />
+              </div>
             </div>
           ) : (
             <>
