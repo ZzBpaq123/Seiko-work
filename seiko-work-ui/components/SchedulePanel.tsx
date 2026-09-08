@@ -335,11 +335,11 @@ export function SchedulePanel() {
                   <div className="mt-1 flex flex-1 flex-col gap-0.5">
                     {Array.from({ length: MAX_BARS }, (_, lane) => {
                       const e = dayEvents.find((ev) => eventLanes.get(ev.id) === lane);
-                      if (!e) return <div key={lane} className="h-1.5" />;
+                      if (!e) return <div key={`lane-${lane}`} className="h-1.5" />;
                       const { start, end } = eventDates(e);
                       return (
                         <button
-                          key={e.id}
+                          key={`lane-${lane}`}
                           onClick={() => setDetail(e)}
                           title={e.title}
                           className={cn(
