@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import { toast } from "@/lib/toast";
 
 export interface Result<T = unknown> {
   code: number;
@@ -55,13 +56,24 @@ http.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error)
 );
 
+let loginRedirecting = false;
+
 function redirectToLogin() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || loginRedirecting) return;
+  // 并发请求同时失效时只提示并跳转一次
+  loginRedirecting = true;
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-  if (window.location.hash !== "#login") {
-    window.location.hash = "#login";
-  }
+  // 与 lib/auth.ts 的 AUTH_CHANGED_EVENT 保持一致，让 Header 等组件同步登出状态
+  window.dispatchEvent(new Event("auth-changed"));
+  toast.error("登录已过期，请重新登录");
+  // 先弹窗提示，1s 后再跳转登录页，让用户看到提示内容
+  setTimeout(() => {
+    if (window.location.hash !== "#login") {
+      window.location.hash = "#login";
+    }
+    loginRedirecting = false;
+  }, 1000);
 }
 
 http.interceptors.response.use(

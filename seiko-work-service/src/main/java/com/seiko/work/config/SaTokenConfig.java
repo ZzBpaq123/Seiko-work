@@ -1,7 +1,11 @@
 package com.seiko.work.config;
 
+import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.filter.SaServletFilter;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.util.SaResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seiko.work.base.Result;
 import com.seiko.work.base.ResultCode;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +22,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RequiredArgsConstructor
 public class SaTokenConfig {
+
+    private final ObjectMapper objectMapper;
 
     /**
      * 注册 Sa-Token 全局过滤器
@@ -38,7 +44,7 @@ public class SaTokenConfig {
                 // 异常处理函数
                 .setError(e -> {
                     log.warn("Sa-Token 全局过滤器异常: {}", e.getMessage());
-                    return Result.error(ResultCode.UNAUTHORIZED.getCode(), e.getMessage());
+                    return SaResult.error(e.getMessage()).setCode(ResultCode.UNAUTHORIZED.getCode());
                 });
     }
 
