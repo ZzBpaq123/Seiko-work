@@ -208,7 +208,7 @@ export function SchedulePanel() {
 
   return (
     <PanelReveal open={open}>
-      <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
+      <div className="pointer-events-auto fixed bottom-6 left-6 top-24 z-10 flex w-xl max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
         {/* 头部 */}
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
@@ -254,13 +254,6 @@ export function SchedulePanel() {
               className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900 disabled:opacity-50"
             >
               <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            </button>
-            <button
-              onClick={clearHash}
-              aria-label="关闭"
-              className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
-            >
-              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
