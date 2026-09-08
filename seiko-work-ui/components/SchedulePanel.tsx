@@ -315,16 +315,19 @@ export function SchedulePanel() {
                       {day.getDate()}
                     </span>
                   </div>
-                  {holiday && (
-                    <span
-                      className={cn(
-                        "mt-0.5 block break-all text-right text-[10px] leading-3",
-                        holiday.isHoliday === 1 ? "text-red-600" : "text-neutral-600"
-                      )}
-                    >
-                      {holiday.name}
-                    </span>
-                  )}
+                  {/* 固定高度槽位，保证有无节假日的格子横线对齐 */}
+                  <div className="mt-0.5 h-6 overflow-hidden">
+                    {holiday && (
+                      <span
+                        className={cn(
+                          "block break-all text-right text-[10px] leading-3",
+                          holiday.isHoliday === 1 ? "text-red-600" : "text-neutral-600"
+                        )}
+                      >
+                        {holiday.name}
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-1 flex flex-1 flex-col gap-0.5">
                     {Array.from({ length: MAX_BARS }, (_, lane) => {
                       const e = dayEvents.find((ev) => eventLanes.get(ev.id) === lane);
