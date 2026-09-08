@@ -72,4 +72,9 @@ public final class RedisKey {
      */
     public static final String LOGIN_IP_LOCK = "login:ip:%s:lock";
 
+    /**
+     * 某年节假日数据：holiday:year:{year}
+     */
+    public static final String HOLIDAY_YEAR = "holiday:year:%s";
+
 }
