@@ -15,6 +15,29 @@ export interface CalendarEventParams {
   title: string;
   startDate: string; // yyyy-MM-dd
   endDate: string; // yyyy-MM-dd
+  isAllDay: boolean;
+  startTime?: string; // HH:mm，非全天时必填
+  endTime?: string; // HH:mm，非全天时必填
+  location?: string;
+  remark?: string;
+}
+
+function toBody(params: CalendarEventParams) {
+  const allDay = params.isAllDay;
+  return {
+    title: params.title,
+    startTime: toDateTime(
+      params.startDate,
+      allDay ? "00:00:00" : `${params.startTime ?? "09:00"}:00`
+    ),
+    endTime: toDateTime(
+      params.endDate,
+      allDay ? "23:59:59" : `${params.endTime ?? "10:00"}:00`
+    ),
+    isAllDay: allDay ? 1 : 0,
+    location: params.location?.trim() || null,
+    remark: params.remark?.trim() || null,
+  };
 }
 
 function toDateTime(date: string, time: string) {
@@ -33,12 +56,7 @@ export function createEvent(params: CalendarEventParams) {
   return request<void>({
     method: "POST",
     url: "/api/calendar-events",
-    data: {
-      title: params.title,
-      startTime: toDateTime(params.startDate, "00:00:00"),
-      endTime: toDateTime(params.endDate, "23:59:59"),
-      isAllDay: 1,
-    },
+    data: toBody(params),
   });
 }
 
@@ -46,12 +64,7 @@ export function updateEvent(id: number, params: CalendarEventParams) {
   return request<void>({
     method: "PUT",
     url: `/api/calendar-events/${id}`,
-    data: {
-      title: params.title,
-      startTime: toDateTime(params.startDate, "00:00:00"),
-      endTime: toDateTime(params.endDate, "23:59:59"),
-      isAllDay: 1,
-    },
+    data: toBody(params),
   });
 }
 

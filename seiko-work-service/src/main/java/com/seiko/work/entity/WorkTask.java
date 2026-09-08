@@ -33,13 +33,6 @@ public class WorkTask extends BaseEntity {
     private Long userId;
 
     /**
-     * 关联邮件ID
-     */
-    @TableField("mail_id")
-    @Schema(description = "关联邮件ID")
-    private Long mailId;
-
-    /**
      * 标题
      */
     @TableField("title")

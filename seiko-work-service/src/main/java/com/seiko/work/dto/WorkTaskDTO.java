@@ -40,7 +40,4 @@ public class WorkTaskDTO implements Serializable {
     @Schema(description = "优先级", requiredMode = Schema.RequiredMode.REQUIRED)
     private TaskPriorityEnum priority;
 
-    @Schema(description = "关联邮件ID")
-    private Long mailId;
-
 }
