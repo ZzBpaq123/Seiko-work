@@ -298,7 +298,7 @@ export function SchedulePanel() {
                   key={dateStr}
                   className={cn(
                     "flex min-h-20 flex-col border-b border-r border-neutral-900/5 p-1.5",
-                    !inMonth && "opacity-40"
+                    !inMonth && "opacity-35"
                   )}
                 >
                   <div className="flex items-start">
@@ -308,8 +308,8 @@ export function SchedulePanel() {
                         dateStr === today
                           ? "bg-neutral-900 font-semibold text-neutral-50"
                           : holiday?.isHoliday === 1
-                            ? "font-medium text-red-500"
-                            : "text-neutral-700"
+                            ? "font-medium text-red-600"
+                            : "font-semibold text-neutral-900"
                       )}
                     >
                       {day.getDate()}
@@ -319,7 +319,7 @@ export function SchedulePanel() {
                     <span
                       className={cn(
                         "mt-0.5 block break-all text-right text-[10px] leading-3",
-                        holiday.isHoliday === 1 ? "text-red-500" : "text-neutral-400"
+                        holiday.isHoliday === 1 ? "text-red-600" : "text-neutral-600"
                       )}
                     >
                       {holiday.name}
@@ -347,7 +347,7 @@ export function SchedulePanel() {
                       );
                     })}
                     {dayEvents.length > MAX_BARS && (
-                      <span className="block text-[10px] leading-3 text-neutral-400">
+                      <span className="block text-[10px] leading-3 text-neutral-500">
                         +{dayEvents.length - MAX_BARS}
                       </span>
                     )}
