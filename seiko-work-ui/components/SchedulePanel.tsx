@@ -301,7 +301,7 @@ export function SchedulePanel() {
                     !inMonth && "opacity-40"
                   )}
                 >
-                  <div className="flex items-start justify-between gap-1">
+                  <div className="flex items-start">
                     <span
                       className={cn(
                         "flex h-6 w-6 items-center justify-center rounded-full text-xs",
@@ -314,17 +314,17 @@ export function SchedulePanel() {
                     >
                       {day.getDate()}
                     </span>
-                    {holiday && (
-                      <span
-                        className={cn(
-                          "truncate text-[10px] leading-6",
-                          holiday.isHoliday === 1 ? "text-red-500" : "text-neutral-400"
-                        )}
-                      >
-                        {holiday.name}
-                      </span>
-                    )}
                   </div>
+                  {holiday && (
+                    <span
+                      className={cn(
+                        "mt-0.5 block break-all text-right text-[10px] leading-3",
+                        holiday.isHoliday === 1 ? "text-red-500" : "text-neutral-400"
+                      )}
+                    >
+                      {holiday.name}
+                    </span>
+                  )}
                   <div className="mt-1 flex flex-1 flex-col gap-0.5">
                     {Array.from({ length: MAX_BARS }, (_, lane) => {
                       const e = dayEvents.find((ev) => eventLanes.get(ev.id) === lane);
