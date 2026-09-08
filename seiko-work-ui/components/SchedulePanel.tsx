@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { clearHash, useHash } from "@/hooks/useHash";
 import { PanelReveal } from "@/components/PanelReveal";
+import { DateTimeRangePicker, type DateTimeRange } from "@/components/DateTimeRangePicker";
 import {
   createEvent,
   deleteEvent,
@@ -450,17 +451,13 @@ function EventEditor({
   const initial =
     state.mode === "edit" ? eventDates(state.event) : { start: state.startDate ?? "", end: "" };
   const [title, setTitle] = useState(state.mode === "edit" ? state.event.title : "");
-  const [startDate, setStartDate] = useState(initial.start);
-  const [endDate, setEndDate] = useState(initial.end);
-  const [isAllDay, setIsAllDay] = useState(
-    state.mode === "edit" ? state.event.isAllDay === 1 : true
-  );
-  const [startTime, setStartTime] = useState(
-    state.mode === "edit" ? state.event.startTime.slice(11, 16) : "09:00"
-  );
-  const [endTime, setEndTime] = useState(
-    state.mode === "edit" ? state.event.endTime.slice(11, 16) : "10:00"
-  );
+  const [range, setRange] = useState<DateTimeRange>({
+    startDate: initial.start,
+    endDate: initial.end,
+    isAllDay: state.mode === "edit" ? state.event.isAllDay === 1 : true,
+    startTime: state.mode === "edit" ? state.event.startTime.slice(11, 16) : "09:00",
+    endTime: state.mode === "edit" ? state.event.endTime.slice(11, 16) : "10:00",
+  });
   const [location, setLocation] = useState(
     state.mode === "edit" ? (state.event.location ?? "") : ""
   );
@@ -472,10 +469,11 @@ function EventEditor({
       setError("标题不能为空");
       return;
     }
-    if (!startDate || !endDate) {
+    if (!range.startDate || !range.endDate) {
       setError("请选择开始和结束日期");
       return;
     }
+    const { startDate, endDate, isAllDay, startTime, endTime } = range;
     const startAt = `${startDate} ${isAllDay ? "00:00" : startTime}`;
     const endAt = `${endDate} ${isAllDay ? "23:59" : endTime}`;
     if (endAt < startAt) {
@@ -483,16 +481,7 @@ function EventEditor({
       return;
     }
     setError(null);
-    onSubmit({
-      title: title.trim(),
-      startDate,
-      endDate,
-      isAllDay,
-      startTime,
-      endTime,
-      location,
-      remark,
-    });
+    onSubmit({ title: title.trim(), ...range, location, remark });
   };
 
   return (
@@ -502,7 +491,7 @@ function EventEditor({
     >
       <div className="absolute inset-0 bg-neutral-900/20" />
       <div
-        className="relative w-88 rounded-2xl border border-neutral-900/15 bg-white/95 p-5 shadow-lg"
+        className="relative w-96 rounded-2xl border border-neutral-900/15 bg-white/95 p-5 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -525,47 +514,7 @@ function EventEditor({
             autoFocus
             className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
           />
-          <label className="flex items-center gap-2 text-sm text-neutral-700">
-            <input
-              type="checkbox"
-              checked={isAllDay}
-              onChange={(e) => setIsAllDay(e.target.checked)}
-              className="h-3.5 w-3.5 accent-neutral-900"
-            />
-            全天
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-900"
-            />
-            <span className="text-xs text-neutral-400">至</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-900"
-            />
-          </div>
-          {!isAllDay && (
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-900"
-              />
-              <span className="text-xs text-neutral-400">至</span>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-900"
-              />
-            </div>
-          )}
+          <DateTimeRangePicker value={range} onChange={setRange} />
           <input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
