@@ -3,12 +3,12 @@ package com.seiko.work.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.seiko.work.base.Result;
-import com.seiko.work.dto.MailAccountDTO;
-import com.seiko.work.entity.MailAccount;
+import com.seiko.work.dto.MailDTO;
+import com.seiko.work.entity.Mail;
 import com.seiko.work.entity.MailMessage;
 import com.seiko.work.enums.MailProviderEnum;
 import com.seiko.work.exception.BusinessException;
-import com.seiko.work.service.MailAccountService;
+import com.seiko.work.service.MailService;
 import com.seiko.work.service.MailMessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,24 +33,24 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 @SaCheckLogin
-@Tag(name = "邮件管理", description = "邮箱授权配置与邮件实时获取")
+@Tag(name = "邮件管理", description = "邮箱授权配置与邮件管理")
 public class MailController {
 
-    private final MailAccountService mailAccountService;
+    private final MailService mailService;
     private final MailMessageService mailMessageService;
 
     @PostMapping("/account")
     @Operation(summary = "保存邮箱授权信息")
-    public Result<Void> saveAccount(@Valid @RequestBody MailAccountDTO dto) {
+    public Result<Void> saveAccount(@Valid @RequestBody MailDTO dto) {
         Long userId = StpUtil.getLoginIdAsLong();
-        MailAccount account = mailAccountService.getByUserId(userId);
+        Mail account = mailService.getByUserId(userId);
         if (account == null) {
-            account = new MailAccount();
+            account = new Mail();
             account.setUserId(userId);
         }
         BeanUtils.copyProperties(dto, account);
         fillServerConfig(account);
-        mailAccountService.saveOrUpdate(account);
+        mailService.saveOrUpdate(account);
         return Result.success();
     }
 
@@ -62,9 +62,9 @@ public class MailController {
 
     @GetMapping("/account")
     @Operation(summary = "查询邮箱授权配置")
-    public Result<MailAccount> getAccount() {
+    public Result<Mail> getAccount() {
         Long userId = StpUtil.getLoginIdAsLong();
-        return Result.success(mailAccountService.getByUserId(userId));
+        return Result.success(mailService.getByUserId(userId));
     }
 
     @GetMapping
@@ -92,7 +92,7 @@ public class MailController {
     /**
      * 服务器配置缺省时按邮箱后缀匹配服务商自动补全
      */
-    private void fillServerConfig(MailAccount account) {
+    private void fillServerConfig(Mail account) {
         MailProviderEnum provider = MailProviderEnum.resolve(account.getEmail());
         if (account.getImapHost() == null || account.getImapHost().isBlank()) {
             if (provider == null) {

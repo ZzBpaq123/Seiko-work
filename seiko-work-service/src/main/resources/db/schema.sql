@@ -7,7 +7,7 @@ CREATE DATABASE IF NOT EXISTS `seiko_work`
 USE `seiko_work`;
 
 -- 用户表
-CREATE TABLE IF NOT EXISTS `sys_user` (
+CREATE TABLE IF NOT EXISTS `work_user` (
     `id`              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     `username`        VARCHAR(50)  NOT NULL COMMENT '用户名',
     `password`        VARCHAR(255) DEFAULT NULL COMMENT '密码（BCrypt加密），手机号注册用户可能为空',
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- 邮箱账号配置表（邮件内容不入库，通过 IMAP 实时拉取）
-CREATE TABLE IF NOT EXISTS `mail_account` (
+CREATE TABLE IF NOT EXISTS `work_mail` (
     `id`              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     `user_id`         BIGINT       NOT NULL COMMENT '用户ID',
     `email`           VARCHAR(100) NOT NULL COMMENT '邮箱地址',
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `work_task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作事项表';
 
 -- 日程事件表
-CREATE TABLE IF NOT EXISTS `calendar_event` (
+CREATE TABLE IF NOT EXISTS `work_event` (
     `id`              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     `user_id`         BIGINT       NOT NULL COMMENT '用户ID',
     `title`           VARCHAR(255) NOT NULL COMMENT '标题',

@@ -15,9 +15,9 @@ import java.io.Serial;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("mail_account")
+@TableName("work_mail")
 @Schema(description = "邮箱账号配置")
-public class MailAccount extends BaseEntity {
+public class Mail extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;

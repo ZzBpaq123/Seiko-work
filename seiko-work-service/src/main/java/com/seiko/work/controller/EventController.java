@@ -7,9 +7,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seiko.work.base.Result;
 import com.seiko.work.base.ResultCode;
 import com.seiko.work.exception.BusinessException;
-import com.seiko.work.dto.CalendarEventDTO;
-import com.seiko.work.entity.CalendarEvent;
-import com.seiko.work.service.CalendarEventService;
+import com.seiko.work.dto.EventDTO;
+import com.seiko.work.entity.Event;
+import com.seiko.work.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -34,59 +34,59 @@ import java.util.List;
  * 日程事件 Controller
  */
 @RestController
-@RequestMapping("/api/calendar-events")
+@RequestMapping("/api/events")
 @RequiredArgsConstructor
 @Validated
 @SaCheckLogin
 @Tag(name = "日程事件", description = "日程增删改查与范围查询")
-public class CalendarEventController {
+public class EventController {
 
-    private final CalendarEventService calendarEventService;
+    private final EventService eventService;
 
     @GetMapping
     @Operation(summary = "日程列表")
-    public Result<Page<CalendarEvent>> page(
+    public Result<Page<Event>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size) {
         Long userId = StpUtil.getLoginIdAsLong();
-        LambdaQueryWrapper<CalendarEvent> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CalendarEvent::getUserId, userId)
-                .orderByDesc(CalendarEvent::getStartTime);
-        return Result.success(calendarEventService.page(new Page<>(current, size), wrapper));
+        LambdaQueryWrapper<Event> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Event::getUserId, userId)
+                .orderByDesc(Event::getStartTime);
+        return Result.success(eventService.page(new Page<>(current, size), wrapper));
     }
 
     @GetMapping("/range")
     @Operation(summary = "查询时间范围内的日程")
-    public Result<List<CalendarEvent>> range(
+    public Result<List<Event>> range(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date start,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date end) {
         Long userId = StpUtil.getLoginIdAsLong();
-        return Result.success(calendarEventService.listByTimeRange(userId, start, end));
+        return Result.success(eventService.listByTimeRange(userId, start, end));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "日程详情")
-    public Result<CalendarEvent> getById(@PathVariable Long id) {
-        CalendarEvent event = getEventById(id);
+    public Result<Event> getById(@PathVariable Long id) {
+        Event event = getEventById(id);
         return Result.success(event);
     }
 
     @PostMapping
     @Operation(summary = "创建日程")
-    public Result<Void> save(@Valid @RequestBody CalendarEventDTO dto) {
-        CalendarEvent event = new CalendarEvent();
+    public Result<Void> save(@Valid @RequestBody EventDTO dto) {
+        Event event = new Event();
         BeanUtils.copyProperties(dto, event);
         event.setUserId(StpUtil.getLoginIdAsLong());
-        calendarEventService.save(event);
+        eventService.save(event);
         return Result.success();
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新日程")
-    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody CalendarEventDTO dto) {
-        CalendarEvent event = getEventById(id);
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody EventDTO dto) {
+        Event event = getEventById(id);
         BeanUtils.copyProperties(dto, event);
-        calendarEventService.updateById(event);
+        eventService.updateById(event);
         return Result.success();
     }
 
@@ -94,13 +94,13 @@ public class CalendarEventController {
     @Operation(summary = "删除日程")
     public Result<Void> delete(@PathVariable Long id) {
         getEventById(id);
-        calendarEventService.removeById(id);
+        eventService.removeById(id);
         return Result.success();
     }
 
-    private CalendarEvent getEventById(Long id) {
+    private Event getEventById(Long id) {
         Long userId = StpUtil.getLoginIdAsLong();
-        CalendarEvent event = calendarEventService.getById(id);
+        Event event = eventService.getById(id);
         if (event == null || !event.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND);
         }

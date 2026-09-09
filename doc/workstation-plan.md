@@ -57,13 +57,13 @@
 ## 3. 数据模型（核心表）
 
 ```text
-sys_user          -- 用户（复用现有认证）
-mail_message      -- 邮件（发件人、主题、正文、收取时间、是否已读、原始 UID）
+work_user         -- 用户（复用现有认证）
+work_mail         -- 邮箱账号配置（邮件内容不入库，通过 IMAP 实时拉取）
 work_task         -- 工作事项（标题、内容、计划日期、状态、优先级、mail_id）
-salary_record     -- 工资记录（年月、各项金额）
-social_insurance  -- 五险一金（年月、险种、个人缴纳、公司缴纳）
-leave_record      -- 请假记录（类型、起止、天数、事由、状态）
-calendar_event    -- 日程事件（标题、起止、是否全天、地点、备注）
+work_event        -- 日程事件（标题、起止、是否全天、地点、备注）
+salary_record     -- 工资记录（年月、各项金额，规划中）
+social_insurance  -- 五险一金（年月、险种、个人缴纳、公司缴纳，规划中）
+leave_record      -- 请假记录（类型、起止、天数、事由、状态，规划中）
 ```
 
 ---
@@ -77,7 +77,7 @@ calendar_event    -- 日程事件（标题、起止、是否全天、地点、�
 | 工资 | `CRUD /api/salary` |
 | 五险一金 | `CRUD /api/social-insurance`, `GET /api/social-insurance/month/{ym}` |
 | 请假 | `CRUD /api/leaves`, `GET /api/leaves/year/{year}/summary` |
-| 日程 | `CRUD /api/calendar-events`, `GET /api/calendar-events/range?start=...&end=...` |
+| 日程 | `CRUD /api/events`, `GET /api/events/range?start=...&end=...` |
 
 ---
 

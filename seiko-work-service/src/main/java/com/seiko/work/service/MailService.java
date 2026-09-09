@@ -1,12 +1,12 @@
 package com.seiko.work.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.seiko.work.entity.MailAccount;
+import com.seiko.work.entity.Mail;
 
 /**
  * 邮箱账号配置 Service
  */
-public interface MailAccountService extends IService<MailAccount> {
+public interface MailService extends IService<Mail> {
 
     /**
      * 根据用户ID查询邮箱账号配置
@@ -14,6 +14,6 @@ public interface MailAccountService extends IService<MailAccount> {
      * @param userId 用户ID
      * @return 邮箱账号配置
      */
-    MailAccount getByUserId(Long userId);
+    Mail getByUserId(Long userId);
 
 }

@@ -47,7 +47,7 @@ function toDateTime(date: string, time: string) {
 export function listEventsByRange(start: string, end: string) {
   return request<CalendarEvent[]>({
     method: "GET",
-    url: "/api/calendar-events/range",
+    url: "/api/events/range",
     params: { start: toDateTime(start, "00:00:00"), end: toDateTime(end, "23:59:59") },
   });
 }
@@ -55,7 +55,7 @@ export function listEventsByRange(start: string, end: string) {
 export function createEvent(params: CalendarEventParams) {
   return request<void>({
     method: "POST",
-    url: "/api/calendar-events",
+    url: "/api/events",
     data: toBody(params),
   });
 }
@@ -63,7 +63,7 @@ export function createEvent(params: CalendarEventParams) {
 export function updateEvent(id: number, params: CalendarEventParams) {
   return request<void>({
     method: "PUT",
-    url: `/api/calendar-events/${id}`,
+    url: `/api/events/${id}`,
     data: toBody(params),
   });
 }

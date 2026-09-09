@@ -1,11 +1,11 @@
 package com.seiko.work.service.impl;
 
 import com.seiko.work.base.ResultCode;
-import com.seiko.work.entity.MailAccount;
+import com.seiko.work.entity.Mail;
 import com.seiko.work.entity.MailMessage;
 import com.seiko.work.exception.BusinessException;
-import com.seiko.work.service.MailAccountService;
 import com.seiko.work.service.MailMessageService;
+import com.seiko.work.service.MailService;
 import org.eclipse.angus.mail.imap.IMAPFolder;
 import jakarta.mail.Address;
 import jakarta.mail.BodyPart;
@@ -36,11 +36,11 @@ public class MailMessageServiceImpl implements MailMessageService {
 
     private static final String INBOX = "INBOX";
 
-    private final MailAccountService mailAccountService;
+    private final MailService mailService;
 
     @Override
     public List<MailMessage> listAll(Long userId) {
-        MailAccount account = requireAccount(userId);
+        Mail account = requireAccount(userId);
         try (Store store = connect(account); Folder folder = store.getFolder(INBOX)) {
             folder.open(Folder.READ_ONLY);
             Message[] messages = folder.getMessages();
@@ -58,7 +58,7 @@ public class MailMessageServiceImpl implements MailMessageService {
 
     @Override
     public MailMessage getDetail(Long userId, String messageUid) {
-        MailAccount account = requireAccount(userId);
+        Mail account = requireAccount(userId);
         try (Store store = connect(account); Folder folder = store.getFolder(INBOX)) {
             folder.open(Folder.READ_ONLY);
             Message message = getMessageByUid(folder, messageUid);
@@ -73,7 +73,7 @@ public class MailMessageServiceImpl implements MailMessageService {
 
     @Override
     public void markRead(Long userId, String messageUid) {
-        MailAccount account = requireAccount(userId);
+        Mail account = requireAccount(userId);
         try (Store store = connect(account); Folder folder = store.getFolder(INBOX)) {
             folder.open(Folder.READ_WRITE);
             Message message = getMessageByUid(folder, messageUid);
@@ -86,15 +86,15 @@ public class MailMessageServiceImpl implements MailMessageService {
         }
     }
 
-    private MailAccount requireAccount(Long userId) {
-        MailAccount account = mailAccountService.getByUserId(userId);
+    private Mail requireAccount(Long userId) {
+        Mail account = mailService.getByUserId(userId);
         if (account == null) {
             throw new BusinessException("未配置邮箱账号，请先保存邮箱授权信息");
         }
         return account;
     }
 
-    private Store connect(MailAccount account) throws MessagingException {
+    private Store connect(Mail account) throws MessagingException {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imap");
         props.put("mail.imap.host", account.getImapHost());

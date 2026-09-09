@@ -14,7 +14,7 @@ import java.io.Serial;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("sys_user")
+@TableName("work_user")
 @Schema(description = "用户实体")
 public class User extends BaseEntity {
 

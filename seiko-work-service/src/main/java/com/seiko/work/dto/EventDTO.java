@@ -15,7 +15,7 @@ import java.util.Date;
  */
 @Data
 @Schema(description = "日程事件请求参数")
-public class CalendarEventDTO implements Serializable {
+public class EventDTO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

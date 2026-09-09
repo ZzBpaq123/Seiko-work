@@ -16,7 +16,7 @@ import java.time.LocalDate;
  */
 @Data
 @Schema(description = "工作事项请求参数")
-public class WorkTaskDTO implements Serializable {
+public class TaskDTO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

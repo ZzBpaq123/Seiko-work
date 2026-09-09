@@ -16,9 +16,9 @@ import java.util.Date;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("calendar_event")
+@TableName("work_event")
 @Schema(description = "日程事件实体")
-public class CalendarEvent extends BaseEntity {
+public class Event extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;

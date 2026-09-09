@@ -1,7 +1,7 @@
 package com.seiko.work.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.seiko.work.entity.WorkTask;
+import com.seiko.work.entity.Task;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 工作事项 Service
  */
-public interface WorkTaskService extends IService<WorkTask> {
+public interface TaskService extends IService<Task> {
 
     /**
      * 查询今日工作事项（当天及逾期未完成的）
@@ -17,7 +17,7 @@ public interface WorkTaskService extends IService<WorkTask> {
      * @param userId 用户ID
      * @return 工作事项列表
      */
-    List<WorkTask> listToday(Long userId);
+    List<Task> listToday(Long userId);
 
     /**
      * 根据计划日期查询
@@ -26,6 +26,6 @@ public interface WorkTaskService extends IService<WorkTask> {
      * @param planDate 计划日期
      * @return 工作事项列表
      */
-    List<WorkTask> listByPlanDate(Long userId, LocalDate planDate);
+    List<Task> listByPlanDate(Long userId, LocalDate planDate);
 
 }

@@ -1,7 +1,7 @@
 package com.seiko.work.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.seiko.work.entity.CalendarEvent;
+import com.seiko.work.entity.Event;
 
 import java.util.Date;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 日程事件 Service
  */
-public interface CalendarEventService extends IService<CalendarEvent> {
+public interface EventService extends IService<Event> {
 
     /**
      * 查询时间范围内的日程事件
@@ -19,6 +19,6 @@ public interface CalendarEventService extends IService<CalendarEvent> {
      * @param endTime   结束时间
      * @return 日程事件列表
      */
-    List<CalendarEvent> listByTimeRange(Long userId, Date startTime, Date endTime);
+    List<Event> listByTimeRange(Long userId, Date startTime, Date endTime);
 
 }

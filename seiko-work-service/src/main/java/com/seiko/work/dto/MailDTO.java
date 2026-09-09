@@ -12,7 +12,7 @@ import java.io.Serializable;
  */
 @Data
 @Schema(description = "邮箱账号配置请求参数")
-public class MailAccountDTO implements Serializable {
+public class MailDTO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

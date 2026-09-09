@@ -1,12 +1,12 @@
 package com.seiko.work.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seiko.work.entity.WorkTask;
+import com.seiko.work.entity.Mail;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 工作事项 Mapper
+ * 邮箱账号配置 Mapper
  */
 @Mapper
-public interface WorkTaskMapper extends BaseMapper<WorkTask> {
+public interface MailMapper extends BaseMapper<Mail> {
 }

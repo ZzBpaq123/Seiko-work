@@ -23,7 +23,7 @@ import {
   updateEvent,
   type CalendarEvent,
   type CalendarEventParams,
-} from "@/lib/schedule";
+} from "@/lib/event";
 import { fetchHolidays, type HolidayInfo } from "@/lib/holiday";
 import { toast } from "@/lib/toast";
 

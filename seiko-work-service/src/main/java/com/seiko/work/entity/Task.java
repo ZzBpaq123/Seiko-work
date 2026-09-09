@@ -20,7 +20,7 @@ import java.time.LocalDate;
 @EqualsAndHashCode(callSuper = true)
 @TableName("work_task")
 @Schema(description = "工作事项实体")
-public class WorkTask extends BaseEntity {
+public class Task extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
