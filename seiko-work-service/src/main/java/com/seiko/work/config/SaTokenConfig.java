@@ -56,10 +56,10 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     // 5. 其余接口默认需要登录
                     StpUtil.checkLogin();
                 })
-                // 异常处理函数
+                // 异常处理函数：异常详情仅记录日志，响应统一返回固定文案
                 .setError(e -> {
-                    log.warn("Sa-Token 全局过滤器异常: {}", e.getMessage());
-                    return SaResult.error(e.getMessage()).setCode(ResultCode.UNAUTHORIZED.getCode());
+                    log.warn("Sa-Token 全局过滤器异常", e);
+                    return SaResult.error("未登录或登录已过期").setCode(ResultCode.UNAUTHORIZED.getCode());
                 });
     }
 

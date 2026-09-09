@@ -19,6 +19,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Store;
 import jakarta.mail.internet.InternetAddress;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.util.Properties;
 /**
  * 邮件 Service 实现（通过 IMAP 实时获取，不持久化）
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MailMessageServiceImpl implements MailMessageService {
@@ -52,7 +54,9 @@ public class MailMessageServiceImpl implements MailMessageService {
                     Comparator.nullsLast(Comparator.naturalOrder())).reversed());
             return list;
         } catch (MessagingException | IOException e) {
-            throw new BusinessException("获取邮件失败：" + e.getMessage());
+            // 底层异常可能包含服务器地址、认证细节，仅记录日志，不向客户端透出
+            log.error("获取邮件列表失败", e);
+            throw new BusinessException("获取邮件失败，请检查邮箱配置");
         }
     }
 
@@ -67,7 +71,8 @@ public class MailMessageServiceImpl implements MailMessageService {
             }
             return parseMessage(message, true);
         } catch (MessagingException | IOException e) {
-            throw new BusinessException("获取邮件详情失败：" + e.getMessage());
+            log.error("获取邮件详情失败", e);
+            throw new BusinessException("获取邮件失败，请检查邮箱配置");
         }
     }
 
@@ -82,7 +87,8 @@ public class MailMessageServiceImpl implements MailMessageService {
             }
             message.setFlags(new Flags(Flags.Flag.SEEN), true);
         } catch (MessagingException e) {
-            throw new BusinessException("标记已读失败：" + e.getMessage());
+            log.error("标记邮件已读失败", e);
+            throw new BusinessException("获取邮件失败，请检查邮箱配置");
         }
     }
 
