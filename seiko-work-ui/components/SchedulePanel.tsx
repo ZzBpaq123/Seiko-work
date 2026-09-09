@@ -8,6 +8,7 @@ import {
   Loader2,
   PenLine,
   RotateCw,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -97,6 +98,7 @@ export function SchedulePanel() {
   const [detail, setDetail] = useState<CalendarEvent | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState("");
 
   const open = useHash() === "#schedule";
 
@@ -179,6 +181,19 @@ export function SchedulePanel() {
     }
     return lanes;
   }, [events]);
+
+  const sortedEvents = useMemo(
+    () => [...events].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.id - b.id),
+    [events]
+  );
+
+  const visibleEvents = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return sortedEvents;
+    return sortedEvents.filter((e) =>
+      [e.title, e.remark, e.location].some((s) => s?.toLowerCase().includes(q))
+    );
+  }, [sortedEvents, query]);
 
   const handleDelete = async (e: CalendarEvent) => {
     try {
@@ -363,6 +378,79 @@ export function SchedulePanel() {
                 </div>
               );
             })
+          )}
+        </div>
+      </div>
+
+      {/* 右侧日程列表 */}
+      <div className="pointer-events-auto fixed bottom-6 right-6 top-24 z-10 hidden w-80 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm xl:flex">
+        <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
+          <h3 className="text-sm font-semibold text-neutral-900">
+            日程列表
+            {visibleEvents.length > 0 && (
+              <span className="ml-1.5 text-xs font-normal text-neutral-500">
+                {visibleEvents.length} 条
+              </span>
+            )}
+          </h3>
+        </div>
+        <div className="border-b border-neutral-900/10 px-5 py-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="搜索标题、备注或地点"
+              className="w-full rounded-lg border border-neutral-900/15 bg-white/60 py-2 pl-9 pr-8 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                aria-label="清空搜索"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-neutral-400 transition-colors hover:text-neutral-900"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 py-2">
+          {loading && events.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              正在加载…
+            </div>
+          ) : visibleEvents.length === 0 ? (
+            <p className="py-16 text-center text-sm text-neutral-400">
+              {query ? "没有匹配的日程" : "当前月份暂无日程"}
+            </p>
+          ) : (
+            <ul className="divide-y divide-neutral-900/5">
+              {visibleEvents.map((e) => (
+                <li key={e.id}>
+                  <button
+                    onClick={() => setDetail(e)}
+                    className="flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-neutral-900/5"
+                  >
+                    <span
+                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: eventColor(e.id) }}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-neutral-900">
+                        {e.title}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-neutral-500">{rangeText(e)}</span>
+                      {e.remark && (
+                        <span className="mt-0.5 block truncate text-xs text-neutral-400">
+                          {e.remark}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
