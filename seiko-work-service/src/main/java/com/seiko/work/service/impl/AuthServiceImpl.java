@@ -305,17 +305,15 @@ public class AuthServiceImpl implements AuthService {
     public void sendResetCode(SendResetCodeDTO dto) {
         String email = dto.getEmail();
         if (email != null && !email.isBlank()) {
-            if (userService.getByEmail(email) == null) {
-                throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "该邮箱未注册");
+            if (userService.getByEmail(email) != null) {
+                doSendEmailCode(email);
             }
-            doSendEmailCode(email);
             return;
         }
         String phone = dto.getPhone();
-        if (userService.getByPhone(phone) == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "该手机号未注册");
+        if (userService.getByPhone(phone) != null) {
+            doSendPhoneCode(phone);
         }
-        doSendPhoneCode(phone);
     }
 
     @Override
@@ -333,12 +331,8 @@ public class AuthServiceImpl implements AuthService {
             codeKey = RedisKey.PHONE_CODE.formatted(phone);
         }
 
-        if (user == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "账号不存在");
-        }
-
         String cachedCode = redisTemplate.opsForValue().get(codeKey);
-        if (cachedCode == null || !cachedCode.equals(dto.getCode())) {
+        if (user == null || cachedCode == null || !cachedCode.equals(dto.getCode())) {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
         }
 

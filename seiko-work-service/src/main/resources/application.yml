@@ -98,7 +98,7 @@ blog:
 
     # 敏感字段加密密钥（AES-256-GCM）：通过环境变量注入，禁止明文写入仓库
     # 未配置时应用启动失败
-    crypto-key: ${CRYPTO_KEY:}
+    crypto-key: ${CRYPTO_KEY:seikowork}
 
     login-rate-limit:
       enabled: true
