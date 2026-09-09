@@ -1,4 +1,4 @@
-package com.seiko.work.entity;
+package com.seiko.work.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,7 +13,7 @@ import java.util.Date;
  */
 @Data
 @Schema(description = "邮件信息")
-public class MailMessage implements Serializable {
+public class MailMessageVO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

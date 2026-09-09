@@ -2,7 +2,7 @@ package com.seiko.work.service.impl;
 
 import com.seiko.work.base.ResultCode;
 import com.seiko.work.entity.Mail;
-import com.seiko.work.entity.MailMessage;
+import com.seiko.work.vo.MailMessageVO;
 import com.seiko.work.exception.BusinessException;
 import com.seiko.work.service.MailMessageService;
 import com.seiko.work.service.MailService;
@@ -39,16 +39,16 @@ public class MailMessageServiceImpl implements MailMessageService {
     private final MailService mailService;
 
     @Override
-    public List<MailMessage> listAll(Long userId) {
+    public List<MailMessageVO> listAll(Long userId) {
         Mail account = requireAccount(userId);
         try (Store store = connect(account); Folder folder = store.getFolder(INBOX)) {
             folder.open(Folder.READ_ONLY);
             Message[] messages = folder.getMessages();
-            List<MailMessage> list = new ArrayList<>(messages.length);
+            List<MailMessageVO> list = new ArrayList<>(messages.length);
             for (Message message : messages) {
                 list.add(parseMessage(message, false));
             }
-            list.sort(Comparator.comparing(MailMessage::getReceiveTime,
+            list.sort(Comparator.comparing(MailMessageVO::getReceiveTime,
                     Comparator.nullsLast(Comparator.naturalOrder())).reversed());
             return list;
         } catch (MessagingException | IOException e) {
@@ -57,7 +57,7 @@ public class MailMessageServiceImpl implements MailMessageService {
     }
 
     @Override
-    public MailMessage getDetail(Long userId, String messageUid) {
+    public MailMessageVO getDetail(Long userId, String messageUid) {
         Mail account = requireAccount(userId);
         try (Store store = connect(account); Folder folder = store.getFolder(INBOX)) {
             folder.open(Folder.READ_ONLY);
@@ -112,8 +112,8 @@ public class MailMessageServiceImpl implements MailMessageService {
         return ((IMAPFolder) folder).getMessageByUID(Long.parseLong(messageUid));
     }
 
-    private MailMessage parseMessage(Message message, boolean withContent) throws MessagingException, IOException {
-        MailMessage mail = new MailMessage();
+    private MailMessageVO parseMessage(Message message, boolean withContent) throws MessagingException, IOException {
+        MailMessageVO mail = new MailMessageVO();
         if (message.getFolder() instanceof IMAPFolder imapFolder) {
             mail.setMessageUid(String.valueOf(imapFolder.getUID(message)));
         }
@@ -137,7 +137,7 @@ public class MailMessageServiceImpl implements MailMessageService {
     /**
      * 递归解析正文内容，text/plain 优先作为纯文本正文，text/html 保存原始HTML
      */
-    private void parseContent(Part part, MailMessage mail) throws MessagingException, IOException {
+    private void parseContent(Part part, MailMessageVO mail) throws MessagingException, IOException {
         if (part.isMimeType("text/plain") && mail.getContentText() == null) {
             mail.setContentText((String) part.getContent());
             return;

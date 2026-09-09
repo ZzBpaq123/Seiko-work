@@ -5,7 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.seiko.work.base.Result;
 import com.seiko.work.dto.MailDTO;
 import com.seiko.work.entity.Mail;
-import com.seiko.work.entity.MailMessage;
+import com.seiko.work.vo.MailMessageVO;
 import com.seiko.work.enums.MailProviderEnum;
 import com.seiko.work.exception.BusinessException;
 import com.seiko.work.service.MailService;
@@ -69,14 +69,14 @@ public class MailController {
 
     @GetMapping
     @Operation(summary = "获取所有邮件")
-    public Result<List<MailMessage>> listAll() {
+    public Result<List<MailMessageVO>> listAll() {
         Long userId = StpUtil.getLoginIdAsLong();
         return Result.success(mailMessageService.listAll(userId));
     }
 
     @GetMapping("/{messageUid}")
     @Operation(summary = "邮件详情")
-    public Result<MailMessage> getDetail(@PathVariable String messageUid) {
+    public Result<MailMessageVO> getDetail(@PathVariable String messageUid) {
         Long userId = StpUtil.getLoginIdAsLong();
         return Result.success(mailMessageService.getDetail(userId, messageUid));
     }

@@ -1,6 +1,6 @@
 package com.seiko.work.service;
 
-import com.seiko.work.entity.MailMessage;
+import com.seiko.work.vo.MailMessageVO;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ public interface MailMessageService {
      * @param userId 用户ID
      * @return 邮件列表
      */
-    List<MailMessage> listAll(Long userId);
+    List<MailMessageVO> listAll(Long userId);
 
     /**
      * 根据邮件UID获取邮件详情（含正文）
@@ -24,7 +24,7 @@ public interface MailMessageService {
      * @param messageUid 邮件UID
      * @return 邮件详情
      */
-    MailMessage getDetail(Long userId, String messageUid);
+    MailMessageVO getDetail(Long userId, String messageUid);
 
     /**
      * 标记邮件已读
