@@ -36,3 +36,8 @@ logging:
   level:
     com.seiko.work: DEBUG
     com.baomidou.mybatisplus: DEBUG
+
+# 开发环境打印 SQL 到控制台（仅限 dev，生产环境勿开启）
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

@@ -209,8 +209,8 @@ export function LoginPanel() {
 
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (regUsername.trim().length < 2 || regUsername.trim().length > 50)
-      return toast.error("用户名长度需为 2-50 个字符");
+    if (regUsername.trim().length < 2 || regUsername.trim().length > 30)
+      return toast.error("用户名长度需为 2-30 个字符");
     if (!EMAIL_RE.test(regEmail)) return toast.error("邮箱格式不正确");
     if (!CODE_RE.test(regCode)) return toast.error("验证码为 6 位数字");
     if (regPassword.length < 6 || regPassword.length > 20)
@@ -642,7 +642,7 @@ export function LoginPanel() {
                 <form onSubmit={handleEmailRegister} className="flex flex-col gap-3">
                   <Field
                     label="用户名"
-                    placeholder="2-50 个字符"
+                    placeholder="2-30 个字符"
                     value={regUsername}
                     onChange={(e) => setRegUsername(e.target.value)}
                   />
