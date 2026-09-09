@@ -84,6 +84,10 @@ spring doc:
     path: /swagger-ui.html
 
 blog:
+  # 跨域配置：允许来源白名单（逗号分隔），生产环境替换为实际域名
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
   # 登录安全配置
   security:
     # 可信反向代理列表（IP 或 CIDR）：仅当请求直连来源在此列表内时才信任 X-Forwarded-For

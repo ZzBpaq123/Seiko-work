@@ -1,5 +1,6 @@
 package com.seiko.work.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.seiko.work.base.Result;
 import com.seiko.work.dto.ChangePasswordDTO;
 import com.seiko.work.dto.LoginDTO;
@@ -93,6 +94,7 @@ public class AuthController {
     }
 
     @PostMapping("/password/change")
+    @SaCheckLogin
     @Operation(summary = "修改密码（需登录，验证原密码）")
     public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
         authService.changePassword(dto);
@@ -100,12 +102,14 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
+    @SaCheckLogin
     @Operation(summary = "修改当前登录用户信息（头像、用户名、邮箱、手机号）")
     public Result<UserVO> updateProfile(@Valid @RequestBody UserProfileUpdateDTO dto) {
         return Result.success(authService.updateProfile(dto));
     }
 
     @PostMapping("/logout")
+    @SaCheckLogin
     @Operation(summary = "用户登出")
     public Result<Void> logout() {
         authService.logout();
@@ -113,6 +117,7 @@ public class AuthController {
     }
 
     @GetMapping("/info")
+    @SaCheckLogin
     @Operation(summary = "获取当前登录用户信息")
     public Result<UserVO> info() {
         return Result.success(authService.getCurrentUser());
