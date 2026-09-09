@@ -4,6 +4,8 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * 安全配置属性
  */
@@ -26,6 +28,12 @@ public class SecurityProperties {
      * 手机号验证码配置
      */
     private PhoneCodeProperties phoneCode = new PhoneCodeProperties();
+
+    /**
+     * 可信反向代理列表（IP 或 CIDR，如 127.0.0.1、10.0.0.0/8）。
+     * 仅当请求直连来源在此列表内时才信任 X-Forwarded-For 头。
+     */
+    private List<String> trustedProxies = List.of("127.0.0.1", "::1");
 
     @Data
     public static class LoginRateLimitProperties {

@@ -66,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.ERROR.getCode(), "邮箱验证码功能未启用");
         }
 
-        String ip = IpUtils.getClientIp(request);
+        String ip = IpUtils.getClientIp(request, securityProperties.getTrustedProxies());
 
         String ipLockKey = RedisKey.EMAIL_IP_LOCK.formatted(ip);
         if (redisTemplate.hasKey(ipLockKey)) {
@@ -149,7 +149,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginVO emailLogin(LoginDTO dto) {
         String email = dto.getEmail();
-        String ip = IpUtils.getClientIp(request);
+        String ip = IpUtils.getClientIp(request, securityProperties.getTrustedProxies());
 
         if (Boolean.TRUE.equals(securityProperties.getLoginRateLimit().getEnabled())) {
             checkLoginLock(email, ip);
@@ -194,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.ERROR.getCode(), "手机验证码功能未启用");
         }
 
-        String ip = IpUtils.getClientIp(request);
+        String ip = IpUtils.getClientIp(request, securityProperties.getTrustedProxies());
 
         String ipLockKey = RedisKey.PHONE_IP_LOCK.formatted(ip);
         if (redisTemplate.hasKey(ipLockKey)) {
@@ -264,7 +264,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginVO phoneLogin(PhoneLoginDTO dto) {
         String phone = dto.getPhone();
-        String ip = IpUtils.getClientIp(request);
+        String ip = IpUtils.getClientIp(request, securityProperties.getTrustedProxies());
 
         if (Boolean.TRUE.equals(securityProperties.getLoginRateLimit().getEnabled())) {
             checkLoginLock(phone, ip);

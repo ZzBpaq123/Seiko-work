@@ -86,6 +86,12 @@ spring doc:
 blog:
   # 登录安全配置
   security:
+    # 可信反向代理列表（IP 或 CIDR）：仅当请求直连来源在此列表内时才信任 X-Forwarded-For
+    # 默认仅信任本机回环（同机部署 nginx 的场景）；若网关/代理在其它内网机器，改为对应网段如 10.0.0.0/8
+    trusted-proxies:
+      - 127.0.0.1
+      - ::1
+
     login-rate-limit:
       enabled: true
       # 单个账号 5 分钟内最多失败 3 次
