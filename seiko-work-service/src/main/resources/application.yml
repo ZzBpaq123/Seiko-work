@@ -92,6 +92,10 @@ blog:
       - 127.0.0.1
       - ::1
 
+    # 敏感字段加密密钥（AES-256-GCM）：通过环境变量注入，禁止明文写入仓库
+    # 未配置时应用启动失败
+    crypto-key: ${CRYPTO_KEY:}
+
     login-rate-limit:
       enabled: true
       # 单个账号 5 分钟内最多失败 3 次

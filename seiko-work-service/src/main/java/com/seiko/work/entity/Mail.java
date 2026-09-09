@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.seiko.work.base.BaseEntity;
+import com.seiko.work.config.handler.EncryptedStringTypeHandler;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,7 +16,7 @@ import java.io.Serial;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("work_mail")
+@TableName(value = "work_mail", autoResultMap = true)
 @Schema(description = "邮箱账号配置")
 public class Mail extends BaseEntity {
 
@@ -37,9 +38,9 @@ public class Mail extends BaseEntity {
     private String email;
 
     /**
-     * 邮箱授权码（仅接收，不返回给前端）
+     * 邮箱授权码（仅接收，不返回给前端；入库 AES-256-GCM 加密，读取时解密）
      */
-    @TableField("auth_code")
+    @TableField(value = "auth_code", typeHandler = EncryptedStringTypeHandler.class)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Schema(description = "邮箱授权码")
     private String authCode;

@@ -35,6 +35,12 @@ public class SecurityProperties {
      */
     private List<String> trustedProxies = List.of("127.0.0.1", "::1");
 
+    /**
+     * 敏感字段加密密钥（AES-256-GCM）：任意长度口令经 SHA-256 派生为 32 字节密钥。
+     * 必须通过环境变量 CRYPTO_KEY 注入，禁止写入仓库。
+     */
+    private String cryptoKey;
+
     @Data
     public static class LoginRateLimitProperties {
 
