@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `work_event` (
     `end_time`        DATETIME     DEFAULT NULL COMMENT '结束时间',
     `is_all_day`      TINYINT      NOT NULL DEFAULT 0 COMMENT '是否全天：0-否，1-是',
     `location`        VARCHAR(255) DEFAULT NULL COMMENT '地点',
-    `remark`          VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    `content`         VARCHAR(500) NOT NULL COMMENT '内容',
     `create_time`     DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `is_deleted`      TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除标志：0-未删除，1-已删除',

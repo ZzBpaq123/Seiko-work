@@ -490,7 +490,9 @@ export function SchedulePanel() {
               <p className="mt-1 text-sm text-neutral-500">地点：{detail.location}</p>
             )}
             {detail.content && (
-              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-500">{detail.content}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-500">
+                {detail.content}
+              </p>
             )}
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -610,18 +612,18 @@ function EventEditor({
             className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
           />
           <DateTimeRangePicker value={range} onChange={setRange} />
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="地点（可选）"
-            className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
-          />
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="内容"
             rows={2}
             className="w-full resize-none rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+          />
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="地点（可选）"
+            className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
           />
           {error && <p className="text-xs text-red-500">{error}</p>}
         </div>

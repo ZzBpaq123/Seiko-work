@@ -41,7 +41,8 @@ public class EventDTO implements Serializable {
     @Schema(description = "地点")
     private String location;
 
-    @Schema(description = "备注")
-    private String remark;
+    @NotBlank(message = "内容不能为空")
+    @Schema(description = "内容", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String content;
 
 }
