@@ -14,16 +14,35 @@
 import {useEffect, useMemo, useRef} from "react";
 import {Canvas, useFrame, useThree} from "@react-three/fiber";
 import {OrbitControls} from "@react-three/drei";
+import {useTheme} from "next-themes";
 import * as THREE from "three";
 import gsap from "gsap";
 
 // ---------- 全局视觉常量 ----------
-// 背景清屏色（画布底色）
-const BACKGROUND_COLOR = "#FAFAF7";
-// 莫比乌斯带表面的填充色（米白，接近背景色，形成低对比的"纸雕"感）
-const SURFACE_COLOR = "#FAFAF7";
-// 线框颜色（中灰，勾勒莫比乌斯带轮廓）
-const WIREFRAME_COLOR = "#727478";
+// 按主题区分的一套配色（浅色：纸雕米白底 + 深灰线框 + 黑点；深色：近黑底 + 浅灰线框 + 白点）
+const THEME_COLORS = {
+    light: {
+        // 背景清屏色（画布底色）
+        background: "#FAFAF7",
+        // 莫比乌斯带表面的填充色（接近背景色，形成低对比的"纸雕"感）
+        surface: "#FAFAF7",
+        // 线框颜色（中灰，勾勒莫比乌斯带轮廓）
+        wireframe: "#727478",
+        // 粒子点颜色（RGB 向量，供着色器 uniform 使用）
+        dot: [0.0, 0.0, 0.0],
+    },
+    dark: {
+        background: "#0a0a0a",
+        surface: "#1a1a1a",
+        wireframe: "#8b8b8b",
+        dot: [1.0, 1.0, 1.0],
+    },
+} as const;
+
+function useThemePalette() {
+    const {resolvedTheme} = useTheme();
+    return THEME_COLORS[resolvedTheme === "dark" ? "dark" : "light"];
+}
 
 // ---------- 莫比乌斯带几何参数 ----------
 // R   ：主圆环半径（莫比乌斯带中心线绕成的圆，位于 XY 平面）
@@ -318,6 +337,7 @@ const DOT_VERTEX_SHADER = `
 // ------------------------------------------------------------
 const DOT_FRAGMENT_SHADER = `
     varying float vAlpha;
+    uniform vec3 uColor;
 
     void main() {
         // 将局部坐标平移到圆心在 (0,0)，方便判断半径
@@ -325,8 +345,8 @@ const DOT_FRAGMENT_SHADER = `
         // 超出半径 0.5（即圆形之外）的像素直接丢弃，形成圆点而不是方块
         if (length(coord) > 0.5) discard;
 
-        // 颜色为近黑色，alpha 为 0.85 * vAlpha（带距离渐隐）
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.85 * vAlpha);
+        // 颜色来自主题 uniform（浅色近黑 / 深色近白），alpha 为 0.85 * vAlpha（带距离渐隐）
+        gl_FragColor = vec4(uColor, 0.85 * vAlpha);
     }
 `;
 
@@ -346,12 +366,14 @@ function DotField({
 }) {
     // gl：Three.js 渲染器实例，用于获取像素比（适配高 DPI 屏）
     const {gl} = useThree();
+    // 主题色板（随 next-themes 的 resolvedTheme 变化）
+    const palette = useThemePalette();
     // groupRef：包裹所有粒子的容器组，便于整体缩放 / 旋转
     const groupRef = useRef<THREE.Group>(null);
     // ownAngle：记录粒子组自身的累计旋转角（绕 Z 轴）
     const ownAngle = useRef(0);
 
-    // 创建共享的粒子材质（ShaderMaterial），只创建一次
+    // 创建共享的粒子材质（ShaderMaterial），主题切换时重建以更新点颜色
     const material = useMemo(
         () =>
             new THREE.ShaderMaterial({
@@ -362,11 +384,12 @@ function DotField({
                     uPixelRatio: {value: gl.getPixelRatio()}, // 设备像素比
                     uFadeStart: {value: 18.0}, // 近处渐隐起始阈值
                     uFadeEnd: {value: 32.0}, // 近处渐隐结束阈值
+                    uColor: {value: new THREE.Vector3(...palette.dot)}, // 点颜色（随主题）
                 },
                 vertexShader: DOT_VERTEX_SHADER,
                 fragmentShader: DOT_FRAGMENT_SHADER,
             }),
-        [gl]
+        [gl, palette]
     );
 
     // 监听像素比变化（如跨屏拖动窗口 / 缩放），实时更新 uniform
@@ -425,6 +448,8 @@ function DotField({
 function MobiusScene() {
     // gl：渲染器实例，用于设置清屏色
     const {gl} = useThree();
+    // 主题色板（随 next-themes 的 resolvedTheme 变化）
+    const palette = useThemePalette();
     // groupRef：莫比乌斯带所在的分组，用于缩放与旋转
     const groupRef = useRef<THREE.Group>(null);
 
@@ -434,10 +459,10 @@ function MobiusScene() {
     const backgroundDotGeometry = useMemo(() => createBackgroundDotGeometry(), []);
     const accentDotGeometry = useMemo(() => createAccentDotGeometry(), []);
 
-    // 把画布清屏色设为米白背景色
+    // 把画布清屏色设为当前主题的背景色
     useEffect(() => {
-        gl.setClearColor(BACKGROUND_COLOR);
-    }, [gl]);
+        gl.setClearColor(palette.background);
+    }, [gl, palette]);
 
     // 入场动画：整组从极小缩放到正常大小
     useEffect(() => {
@@ -469,17 +494,17 @@ function MobiusScene() {
                     开启 DoubleSide 双面渲染 + polygonOffset 使表面优先于线框绘制 */}
                 <mesh geometry={surfaceGeometry}>
                     <meshBasicMaterial
-                        color={SURFACE_COLOR}
+                        color={palette.surface}
                         side={THREE.DoubleSide}
                         polygonOffset
                         polygonOffsetFactor={1}
                         polygonOffsetUnits={1}
                     />
                 </mesh>
-                {/* 线框：深灰色线段，polygonOffset 取负值使线框绘制在表面之上 */}
+                {/* 线框：灰色线段，polygonOffset 取负值使线框绘制在表面之上 */}
                 <lineSegments geometry={lineGeometry}>
                     <lineBasicMaterial
-                        color={WIREFRAME_COLOR}
+                        color={palette.wireframe}
                         polygonOffset
                         polygonOffsetFactor={-1}
                         polygonOffsetUnits={-1}

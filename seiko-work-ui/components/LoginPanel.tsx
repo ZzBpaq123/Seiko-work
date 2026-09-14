@@ -42,10 +42,10 @@ const CODE_RE = /^\d{6}$/;
 function Field({ label, ...props }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs text-neutral-500">{label}</span>
+      <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">{label}</span>
       <input
         {...props}
-        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
       />
     </label>
   );
@@ -82,7 +82,7 @@ function SendCodeButton({
       type="button"
       onClick={handleClick}
       disabled={disabled || busy}
-      className="shrink-0 rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-xs text-neutral-700 transition-colors hover:border-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
+      className="shrink-0 rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white disabled:cursor-not-allowed disabled:opacity-50"
     >
       {countdown > 0 ? `${countdown}s 后重发` : loading ? "发送中…" : "获取验证码"}
     </button>
@@ -94,7 +94,7 @@ function SubmitButton({ loading, children }: { loading: boolean; children: strin
     <button
       type="submit"
       disabled={loading}
-      className="flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 py-2.5 text-sm font-medium text-neutral-50 transition-opacity disabled:opacity-60"
+      className="flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 dark:bg-neutral-50 py-2.5 text-sm font-medium text-neutral-50 dark:text-neutral-900 transition-opacity disabled:opacity-60"
     >
       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
       {children}
@@ -419,7 +419,7 @@ export function LoginPanel() {
     }
   };
 
-  const inputClass = "h-4 w-4 text-neutral-600";
+  const inputClass = "h-4 w-4 text-neutral-600 dark:text-neutral-300";
 
   const open = useHash() === "#login";
 
@@ -428,12 +428,12 @@ export function LoginPanel() {
       <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex items-center justify-center">
       <section
         className={cn(
-          "flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm",
+          "flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-900/15 dark:border-white/15 bg-white/20 dark:bg-white/5 shadow-sm",
           user ? "max-w-3xl" : "max-w-md"
         )}
       >
-        <div className="flex items-center justify-between border-b border-neutral-900/10 px-6 py-4">
-          <div className="flex items-center gap-2 text-neutral-900">
+        <div className="flex items-center justify-between border-b border-neutral-900/10 dark:border-white/10 px-6 py-4">
+          <div className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
             <span className="text-sm font-semibold">
               {user ? (editing ? "编辑资料" : "个人中心") : mode === "email-register" ? "注册账号" : mode === "forgot-password" ? "找回密码" : "登录账号"}
             </span>
@@ -441,7 +441,7 @@ export function LoginPanel() {
           <button
             onClick={mode === "forgot-password" ? () => switchMode("email-login") : clearHash}
             aria-label="关闭"
-            className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+            className="rounded-full p-1.5 text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
           >
             <X className="h-5 w-5" />
           </button>
@@ -449,7 +449,7 @@ export function LoginPanel() {
 
         <div className="px-6 py-5">
           {!checked ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm text-neutral-500">
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-neutral-500 dark:text-neutral-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               正在检查登录状态…
             </div>
@@ -479,7 +479,7 @@ export function LoginPanel() {
                 />
                 {emailChanged && (
                   <div>
-                    <span className="mb-1 block text-xs text-neutral-500">
+                    <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
                       邮箱验证码（已发送至新邮箱）
                     </span>
                     <div className="flex gap-2">
@@ -488,7 +488,7 @@ export function LoginPanel() {
                         onChange={(e) => setProfileEmailCode(e.target.value)}
                         placeholder="6 位数字"
                         maxLength={6}
-                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
                       />
                       <SendCodeButton onSend={handleSendProfileEmailCode} disabled={savingProfile} />
                     </div>
@@ -503,7 +503,7 @@ export function LoginPanel() {
                 />
                 {phoneChanged && (
                   <div>
-                    <span className="mb-1 block text-xs text-neutral-500">
+                    <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
                       手机验证码（已发送至新手机号）
                     </span>
                     <div className="flex gap-2">
@@ -512,7 +512,7 @@ export function LoginPanel() {
                         onChange={(e) => setProfilePhoneCode(e.target.value)}
                         placeholder="6 位数字"
                         maxLength={6}
-                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
                       />
                       <SendCodeButton onSend={handleSendProfilePhoneCode} disabled={savingProfile} />
                     </div>
@@ -522,7 +522,7 @@ export function LoginPanel() {
                     <button
                       type="button"
                       onClick={() => setEditing(false)}
-                      className="shrink-0 rounded-lg border border-neutral-900/15 bg-white/60 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:border-neutral-900"
+                      className="shrink-0 rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
                     >
                       返回
                     </button>
@@ -541,30 +541,30 @@ export function LoginPanel() {
                         className="h-16 w-16 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-900/10 text-xl font-medium text-neutral-700">
+                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-900/10 dark:bg-white/10 text-xl font-medium text-neutral-700 dark:text-neutral-300">
                         {(user.nickname || user.username).slice(0, 1)}
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col divide-y divide-neutral-900/10 rounded-lg border border-neutral-900/10 bg-white/40 text-sm">
+                  <div className="flex flex-col divide-y divide-neutral-900/10 dark:divide-white/10 rounded-lg border border-neutral-900/10 dark:border-white/10 bg-white/40 dark:bg-neutral-800/40 text-sm">
                     <div className="flex items-center justify-between px-3 py-2">
-                      <span className="text-neutral-500">用户名</span>
-                      <span className="text-neutral-900">{user.username}</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">用户名</span>
+                      <span className="text-neutral-900 dark:text-neutral-100">{user.username}</span>
                     </div>
                     <div className="flex items-center justify-between px-3 py-2">
-                      <span className="text-neutral-500">邮箱</span>
-                      <span className="text-neutral-900">{user.email || "未绑定"}</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">邮箱</span>
+                      <span className="text-neutral-900 dark:text-neutral-100">{user.email || "未绑定"}</span>
                     </div>
                     <div className="flex items-center justify-between px-3 py-2">
-                      <span className="text-neutral-500">手机号</span>
-                      <span className="text-neutral-900">{user.phone || "未绑定"}</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">手机号</span>
+                      <span className="text-neutral-900 dark:text-neutral-100">{user.phone || "未绑定"}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={enterEdit}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-50 transition-opacity"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-neutral-900 dark:bg-neutral-50 px-4 py-2 text-sm font-medium text-neutral-50 dark:text-neutral-900 transition-opacity"
                     >
                       <Pencil className="h-4 w-4" />
                       编辑资料
@@ -572,7 +572,7 @@ export function LoginPanel() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-900/15 bg-white/60 px-4 py-2 text-sm text-neutral-700 transition-colors hover:border-neutral-900"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
                     >
                       <LogOut className="h-4 w-4" />
                       退出登录
@@ -581,14 +581,14 @@ export function LoginPanel() {
                 </>
               )}
               </div>
-              <div className="flex flex-col gap-4 border-l border-neutral-900/10 pl-6">
+              <div className="flex flex-col gap-4 border-l border-neutral-900/10 dark:border-white/10 pl-6">
                 <MailAccountConfig />
               </div>
             </div>
           ) : (
             <>
               {mode !== "email-register" && mode !== "forgot-password" && (
-                <div className="mb-5 flex rounded-lg border border-neutral-900/10 bg-neutral-900/5 p-1">
+                <div className="mb-5 flex rounded-lg border border-neutral-900/10 dark:border-white/10 bg-neutral-900/5 dark:bg-white/5 p-1">
                   {MODE_TABS.map((tab) => (
                     <button
                       key={tab.key}
@@ -597,8 +597,8 @@ export function LoginPanel() {
                       className={cn(
                         "flex-1 rounded-md py-1.5 text-xs transition-colors",
                         mode === tab.key
-                          ? "bg-white text-neutral-900 shadow-sm"
-                          : "text-neutral-500 hover:text-neutral-900"
+                          ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-50 dark:text-neutral-900"
+                          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50"
                       )}
                     >
                       {tab.label}
@@ -627,7 +627,7 @@ export function LoginPanel() {
                     <button
                       type="button"
                       onClick={() => switchMode("forgot-password")}
-                      className="text-xs text-neutral-500 underline underline-offset-2 transition-opacity hover:text-neutral-900 hover:opacity-60"
+                      className="text-xs text-neutral-500 dark:text-neutral-400 underline underline-offset-2 transition-opacity hover:text-neutral-900 dark:hover:text-neutral-50 hover:opacity-60"
                     >
                       忘记密码？
                     </button>
@@ -654,14 +654,14 @@ export function LoginPanel() {
                     onChange={(e) => setRegEmail(e.target.value)}
                   />
                   <div>
-                    <span className="mb-1 block text-xs text-neutral-500">邮箱验证码</span>
+                    <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">邮箱验证码</span>
                     <div className="flex gap-2">
                       <input
                         value={regCode}
                         onChange={(e) => setRegCode(e.target.value)}
                         placeholder="6 位数字"
                         maxLength={6}
-                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
                       />
                       <SendCodeButton onSend={handleSendEmailCode} disabled={loading} />
                     </div>
@@ -689,7 +689,7 @@ export function LoginPanel() {
               {mode === "phone-login" && (
                 <form onSubmit={handlePhoneLogin} className="flex flex-col gap-3">
                   <div>
-                    <span className="mb-1 block text-xs text-neutral-500">
+                    <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
                       手机号
                     </span>
                     <input
@@ -697,18 +697,18 @@ export function LoginPanel() {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="11 位手机号"
                       maxLength={11}
-                      className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                      className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
                     />
                   </div>
                   <div>
-                    <span className="mb-1 block text-xs text-neutral-500">短信验证码</span>
+                    <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">短信验证码</span>
                     <div className="flex gap-2">
                       <input
                         value={phoneCode}
                         onChange={(e) => setPhoneCode(e.target.value)}
                         placeholder="6 位数字"
                         maxLength={6}
-                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
                       />
                       <SendCodeButton onSend={handleSendPhoneCode} disabled={loading} />
                     </div>
@@ -721,7 +721,7 @@ export function LoginPanel() {
 
               {mode === "forgot-password" && (
                 <form onSubmit={handleForgotReset} className="flex flex-col gap-3">
-                  <div className="mb-1 flex rounded-lg border border-neutral-900/10 bg-neutral-900/5 p-1">
+                  <div className="mb-1 flex rounded-lg border border-neutral-900/10 dark:border-white/10 bg-neutral-900/5 dark:bg-white/5 p-1">
                     {(
                       [
                         { key: "email", label: "邮箱找回" },
@@ -735,8 +735,8 @@ export function LoginPanel() {
                         className={cn(
                           "flex-1 rounded-md py-1.5 text-xs transition-colors",
                           forgotType === tab.key
-                            ? "bg-white text-neutral-900 shadow-sm"
-                            : "text-neutral-500 hover:text-neutral-900"
+                            ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-50 dark:text-neutral-900"
+                            : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-50"
                         )}
                       >
                         {tab.label}
@@ -751,14 +751,14 @@ export function LoginPanel() {
                     onChange={(e) => setForgotContact(e.target.value)}
                   />
                   <div>
-                    <span className="mb-1 block text-xs text-neutral-500">验证码</span>
+                    <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">验证码</span>
                     <div className="flex gap-2">
                       <input
                         value={forgotCode}
                         onChange={(e) => setForgotCode(e.target.value)}
                         placeholder="6 位数字"
                         maxLength={6}
-                        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+                        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
                       />
                       <SendCodeButton onSend={handleSendForgotCode} disabled={loading} />
                     </div>
@@ -785,23 +785,23 @@ export function LoginPanel() {
 
               {mode !== "forgot-password" &&
                 (mode === "email-login" || mode === "phone-login" ? (
-                  <p className="mt-4 text-center text-xs text-neutral-500">
+                  <p className="mt-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
                     还没账号？
                     <button
                       type="button"
                       onClick={() => switchMode("email-register")}
-                      className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
+                      className="text-neutral-900 dark:text-neutral-100 underline underline-offset-2 transition-opacity hover:opacity-60"
                     >
                       赶快注册...
                     </button>
                   </p>
                 ) : (
-                  <p className="mt-4 text-center text-xs text-neutral-500">
+                  <p className="mt-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
                     已有账号
                     <button
                       type="button"
                       onClick={() => switchMode("email-login")}
-                      className="text-neutral-900 underline underline-offset-2 transition-opacity hover:opacity-60"
+                      className="text-neutral-900 dark:text-neutral-100 underline underline-offset-2 transition-opacity hover:opacity-60"
                     >
                       返回登录
                     </button>
@@ -809,7 +809,7 @@ export function LoginPanel() {
                 ))}
 
               {(mode === "email-login" || mode === "phone-login") && (
-                <p className="mt-4 flex items-center justify-center gap-1 text-xs text-neutral-400">
+                <p className="mt-4 flex items-center justify-center gap-1 text-xs text-neutral-400 dark:text-neutral-500">
                   <KeyRound className="h-3 w-3" />
                   登录即代表同意服务条款与隐私政策
                 </p>

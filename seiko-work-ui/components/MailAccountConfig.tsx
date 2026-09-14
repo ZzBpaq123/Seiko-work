@@ -11,10 +11,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function Field({ label, ...props }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs text-neutral-500">{label}</span>
+      <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">{label}</span>
       <input
         {...props}
-        className="w-full rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+        className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
       />
     </label>
   );
@@ -89,17 +89,17 @@ export function MailAccountConfig() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <Mail className="h-4 w-4 text-neutral-700" />
-        <span className="text-sm font-semibold text-neutral-900">邮箱授权配置</span>
+        <Mail className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
+        <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">邮箱授权配置</span>
         {account && (
-          <span className="rounded-full bg-neutral-900/5 px-2 py-0.5 text-xs text-neutral-600">
+          <span className="rounded-full bg-neutral-900/5 dark:bg-white/5 px-2 py-0.5 text-xs text-neutral-600 dark:text-neutral-300">
             已配置
           </span>
         )}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-neutral-500">
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-neutral-500 dark:text-neutral-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           正在加载配置…
         </div>
@@ -123,7 +123,7 @@ export function MailAccountConfig() {
           <button
             type="button"
             onClick={() => setShowAdvanced((v) => !v)}
-            className="flex items-center gap-1 self-start text-xs text-neutral-500 underline underline-offset-2 transition-colors hover:text-neutral-900"
+            className="flex items-center gap-1 self-start text-xs text-neutral-500 dark:text-neutral-400 underline underline-offset-2 transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
           >
             高级设置
             <ChevronDown
@@ -146,7 +146,7 @@ export function MailAccountConfig() {
                 value={imapPort}
                 onChange={(e) => setImapPort(e.target.value)}
               />
-              <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={sslEnable}
@@ -162,7 +162,7 @@ export function MailAccountConfig() {
             <button
               type="submit"
               disabled={saving}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 py-2.5 text-sm font-medium text-neutral-50 transition-opacity disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 dark:bg-neutral-50 py-2.5 text-sm font-medium text-neutral-50 dark:text-neutral-900 transition-opacity disabled:opacity-60"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               保存配置
@@ -170,7 +170,7 @@ export function MailAccountConfig() {
           </div>
 
           {account && (
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-400 dark:text-neutral-500">
               当前服务器：{account.imapHost || "自动识别"}
               {account.imapPort ? ` : ${account.imapPort}` : ""}
               {account.sslEnable ? "（SSL）" : ""}

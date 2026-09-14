@@ -5,6 +5,7 @@ import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import { useHash } from "@/hooks/useHash";
 import { useAuthUser } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type NavItem = {
   key: string;
@@ -37,8 +38,8 @@ function NavButton({
       className={cn(
         "relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border backdrop-blur-sm transition-colors duration-200",
         active
-          ? "border-neutral-900 bg-neutral-900 text-neutral-50"
-          : "border-neutral-900/15 bg-white/70 text-neutral-700 hover:border-neutral-900 hover:bg-neutral-900 hover:text-neutral-50"
+          ? "border-neutral-900 bg-neutral-900 text-neutral-50 dark:border-neutral-50 dark:bg-neutral-50 dark:text-neutral-900"
+          : "border-neutral-900/15 bg-white/70 text-neutral-700 hover:border-neutral-900 hover:bg-neutral-900 hover:text-neutral-50 dark:border-neutral-50/20 dark:bg-neutral-900/70 dark:text-neutral-200 dark:hover:border-neutral-50 dark:hover:bg-neutral-50 dark:hover:text-neutral-900"
       )}
     >
       {children ?? <Icon className="h-5 w-5" />}
@@ -86,6 +87,7 @@ export function SideNav() {
           <NavButton key={item.key} item={item} active={isActive(item)} />
         )
       )}
+      <ThemeToggle />
     </nav>
   );
 }

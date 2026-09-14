@@ -230,14 +230,14 @@ export function SchedulePanel() {
     <PanelReveal open={open}>
       <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex gap-4">
         {/* 左：月历 */}
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 dark:border-white/15 bg-white/20 dark:bg-white/5 shadow-sm">
         {/* 头部 */}
-        <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
-          <div className="flex items-center gap-2 text-neutral-900">
+        <div className="flex items-center justify-between border-b border-neutral-900/10 dark:border-white/10 px-5 py-4">
+          <div className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
             <button
               onClick={() => goMonth(-1)}
               aria-label="上个月"
-              className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+              className="rounded-full p-1.5 text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -247,7 +247,7 @@ export function SchedulePanel() {
             <button
               onClick={() => goMonth(1)}
               aria-label="下个月"
-              className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+              className="rounded-full p-1.5 text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -256,7 +256,7 @@ export function SchedulePanel() {
                 const now = new Date();
                 setView({ year: now.getFullYear(), month: now.getMonth() });
               }}
-              className="rounded-lg border border-neutral-900/15 bg-white/60 px-2.5 py-1 text-xs text-neutral-700 transition-colors hover:border-neutral-900"
+              className="rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-2.5 py-1 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
             >
               今天
             </button>
@@ -264,11 +264,11 @@ export function SchedulePanel() {
         </div>
 
         {/* 星期表头 */}
-        <div className="grid grid-cols-7 border-b border-neutral-900/10">
+        <div className="grid grid-cols-7 border-b border-neutral-900/10 dark:border-white/10">
           {WEEKDAYS.map((w) => (
             <div
               key={w}
-              className="px-2 py-2 text-center text-xs font-medium text-neutral-500"
+              className="px-2 py-2 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400"
             >
               {w}
             </div>
@@ -278,16 +278,16 @@ export function SchedulePanel() {
         {/* 月历网格 */}
         <div className="grid flex-1 auto-rows-fr grid-cols-7 overflow-y-auto overflow-x-hidden">
           {loading && events.length === 0 ? (
-            <div className="col-span-7 flex items-center justify-center gap-2 text-sm text-neutral-500">
+            <div className="col-span-7 flex items-center justify-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               正在加载日程…
             </div>
           ) : loadError ? (
-            <div className="col-span-7 flex flex-col items-center gap-3 py-16 text-sm text-neutral-500">
+            <div className="col-span-7 flex flex-col items-center gap-3 py-16 text-sm text-neutral-500 dark:text-neutral-400">
               <p className="max-w-55 text-center text-xs leading-5">{loadError}</p>
               <button
                 onClick={load}
-                className="rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-1.5 text-xs text-neutral-700 transition-colors hover:border-neutral-900"
+                className="rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
               >
                 重试
               </button>
@@ -302,7 +302,7 @@ export function SchedulePanel() {
                 <div
                   key={dateStr}
                   className={cn(
-                    "flex min-h-20 flex-col border-b border-r border-neutral-900/5 p-1.5",
+                    "flex min-h-20 flex-col border-b border-r border-neutral-900/5 dark:border-white/5 p-1.5",
                     !inMonth && "opacity-35"
                   )}
                 >
@@ -311,10 +311,10 @@ export function SchedulePanel() {
                       className={cn(
                         "flex h-6 w-6 items-center justify-center rounded-full text-xs",
                         dateStr === today
-                          ? "bg-neutral-900 font-semibold text-neutral-50"
+                          ? "bg-neutral-900 dark:bg-neutral-50 font-semibold text-neutral-50 dark:text-neutral-900"
                           : holiday?.isHoliday === 1
                             ? "font-medium text-red-600"
-                            : "font-semibold text-neutral-900"
+                            : "font-semibold text-neutral-900 dark:text-neutral-100"
                       )}
                     >
                       {day.getDate()}
@@ -326,7 +326,7 @@ export function SchedulePanel() {
                       <span
                         className={cn(
                           "block break-all text-right text-[10px] leading-3",
-                          holiday.isHoliday === 1 ? "text-red-600" : "text-neutral-600"
+                          holiday.isHoliday === 1 ? "text-red-600" : "text-neutral-600 dark:text-neutral-300"
                         )}
                       >
                         {holiday.name}
@@ -355,7 +355,7 @@ export function SchedulePanel() {
                       );
                     })}
                     {dayEvents.length > MAX_BARS && (
-                      <span className="block text-[10px] leading-3 text-neutral-500">
+                      <span className="block text-[10px] leading-3 text-neutral-500 dark:text-neutral-400">
                         +{dayEvents.length - MAX_BARS}
                       </span>
                     )}
@@ -368,12 +368,12 @@ export function SchedulePanel() {
       </div>
 
       {/* 右侧日程列表 */}
-      <aside className="hidden w-96 shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm xl:flex">
-        <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
-          <h3 className="text-sm font-semibold text-neutral-900">
+      <aside className="hidden w-96 shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 dark:border-white/15 bg-white/20 dark:bg-white/5 shadow-sm xl:flex">
+        <div className="flex items-center justify-between border-b border-neutral-900/10 dark:border-white/10 px-5 py-4">
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             日程列表
             {visibleEvents.length > 0 && (
-              <span className="ml-1.5 text-xs font-normal text-neutral-500">
+              <span className="ml-1.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">
                 {visibleEvents.length} 条
               </span>
             )}
@@ -381,7 +381,7 @@ export function SchedulePanel() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setEditor({ mode: "create" })}
-              className="flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-50 transition-colors hover:bg-neutral-700"
+              className="flex items-center gap-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-50 dark:text-neutral-900 transition-colors hover:bg-neutral-700 dark:hover:bg-neutral-300"
             >
               <CalendarPlus className="h-3.5 w-3.5" />
               添加日程
@@ -390,26 +390,26 @@ export function SchedulePanel() {
               onClick={load}
               disabled={loading}
               aria-label="刷新"
-              className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900 disabled:opacity-50"
+              className="rounded-full p-1.5 text-neutral-500 dark:text-neutral-400 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50 disabled:opacity-50"
             >
               <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
             </button>
           </div>
         </div>
-        <div className="border-b border-neutral-900/10 px-5 py-3">
+        <div className="border-b border-neutral-900/10 dark:border-white/10 px-5 py-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="搜索标题、内容或地点"
-              className="w-full rounded-lg border border-neutral-900/15 bg-white/60 py-2 pl-9 pr-8 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+              className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 py-2 pl-9 pr-8 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
             />
             {query && (
               <button
                 onClick={() => setQuery("")}
                 aria-label="清空搜索"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-neutral-400 transition-colors hover:text-neutral-900"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-50"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -418,12 +418,12 @@ export function SchedulePanel() {
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
           {loading && events.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500">
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-neutral-500 dark:text-neutral-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               正在加载…
             </div>
           ) : visibleEvents.length === 0 ? (
-            <p className="py-16 text-center text-sm text-neutral-400">
+            <p className="py-16 text-center text-sm text-neutral-400 dark:text-neutral-500">
               {query ? "没有匹配的日程" : "当前月份暂无日程"}
             </p>
           ) : (
@@ -432,19 +432,19 @@ export function SchedulePanel() {
                 <li key={e.id}>
                   <button
                     onClick={() => setDetail(e)}
-                    className="flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-neutral-900/5"
+                    className="flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10"
                   >
                     <span
                       className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: eventColor(e.id) }}
                     />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-neutral-900">
+                      <span className="block truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {e.title}
                       </span>
-                      <span className="mt-0.5 block text-xs text-neutral-500">{rangeText(e)}</span>
+                      <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">{rangeText(e)}</span>
                       {e.content && (
-                        <span className="mt-0.5 block truncate text-xs text-neutral-400">
+                        <span className="mt-0.5 block truncate text-xs text-neutral-400 dark:text-neutral-500">
                           {e.content}
                         </span>
                       )}
@@ -464,13 +464,13 @@ export function SchedulePanel() {
           className="pointer-events-auto fixed inset-0 z-20 flex items-center justify-center"
           onClick={() => setDetail(null)}
         >
-          <div className="absolute inset-0 bg-neutral-900/20" />
+          <div className="absolute inset-0 bg-neutral-900/20 dark:bg-black/60" />
           <div
-            className="relative w-80 rounded-2xl border border-neutral-900/15 bg-white/95 p-5 shadow-lg"
+            className="relative w-80 rounded-2xl border border-neutral-900/15 dark:border-white/15 bg-white/95 dark:bg-neutral-900 p-5 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
-              <h3 className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+              <h3 className="flex items-center gap-2 text-base font-semibold text-neutral-900 dark:text-neutral-100">
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: eventColor(detail.id) }}
@@ -480,17 +480,17 @@ export function SchedulePanel() {
               <button
                 onClick={() => setDetail(null)}
                 aria-label="关闭"
-                className="rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+                className="rounded-full p-1 text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mt-2 text-sm text-neutral-500">{rangeText(detail)}</p>
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{rangeText(detail)}</p>
             {detail.location && (
-              <p className="mt-1 text-sm text-neutral-500">地点：{detail.location}</p>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">地点：{detail.location}</p>
             )}
             {detail.content && (
-              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-500">
+              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-500 dark:text-neutral-400">
                 {detail.content}
               </p>
             )}
@@ -500,7 +500,7 @@ export function SchedulePanel() {
                   setEditor({ mode: "edit", event: detail });
                   setDetail(null);
                 }}
-                className="flex items-center gap-1.5 rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-1.5 text-xs text-neutral-700 transition-colors hover:border-neutral-900"
+                className="flex items-center gap-1.5 rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
               >
                 <PenLine className="h-3.5 w-3.5" />
                 修改
@@ -586,19 +586,19 @@ function EventEditor({
       className="pointer-events-auto fixed inset-0 z-20 flex items-center justify-center"
       onClick={onCancel}
     >
-      <div className="absolute inset-0 bg-neutral-900/20" />
+      <div className="absolute inset-0 bg-neutral-900/20 dark:bg-black/60" />
       <div
-        className="relative w-96 rounded-2xl border border-neutral-900/15 bg-white/95 p-5 shadow-lg"
+        className="relative w-96 rounded-2xl border border-neutral-900/15 dark:border-white/15 bg-white/95 dark:bg-neutral-900 p-5 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-neutral-900">
+          <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
             {state.mode === "edit" ? "修改日程" : "添加日程"}
           </h3>
           <button
             onClick={onCancel}
             aria-label="关闭"
-            className="rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+            className="rounded-full p-1 text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -609,7 +609,7 @@ function EventEditor({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="日程标题"
             autoFocus
-            className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+            className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
           />
           <DateTimeRangePicker value={range} onChange={setRange} />
           <textarea
@@ -617,27 +617,27 @@ function EventEditor({
             onChange={(e) => setContent(e.target.value)}
             placeholder="内容"
             rows={2}
-            className="w-full resize-none rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+            className="w-full resize-none rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
           />
           <input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="地点（可选）"
-            className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
+            className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
           />
           {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="rounded-lg border border-neutral-900/15 bg-white/60 px-3 py-1.5 text-xs text-neutral-700 transition-colors hover:border-neutral-900"
+            className="rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
           >
             取消
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-50 transition-colors hover:bg-neutral-700 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-50 dark:text-neutral-900 transition-colors hover:bg-neutral-700 dark:hover:bg-neutral-300 disabled:opacity-50"
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {state.mode === "edit" ? "保存" : "创建"}
