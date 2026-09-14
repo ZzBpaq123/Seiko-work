@@ -191,7 +191,7 @@ export function SchedulePanel() {
     const q = query.trim().toLowerCase();
     if (!q) return sortedEvents;
     return sortedEvents.filter((e) =>
-      [e.title, e.remark, e.location].some((s) => s?.toLowerCase().includes(q))
+      [e.title, e.content, e.location].some((s) => s?.toLowerCase().includes(q))
     );
   }, [sortedEvents, query]);
 
@@ -228,7 +228,9 @@ export function SchedulePanel() {
 
   return (
     <PanelReveal open={open}>
-      <div className="pointer-events-auto fixed bottom-6 left-6 top-24 z-10 flex w-xl max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
+      <div className="pointer-events-auto fixed bottom-6 left-6 right-24 top-24 z-10 flex gap-4">
+        {/* 左：月历 */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm">
         {/* 头部 */}
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
           <div className="flex items-center gap-2 text-neutral-900">
@@ -257,23 +259,6 @@ export function SchedulePanel() {
               className="rounded-lg border border-neutral-900/15 bg-white/60 px-2.5 py-1 text-xs text-neutral-700 transition-colors hover:border-neutral-900"
             >
               今天
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setEditor({ mode: "create" })}
-              className="flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-50 transition-colors hover:bg-neutral-700"
-            >
-              <CalendarPlus className="h-3.5 w-3.5" />
-              添加日程
-            </button>
-            <button
-              onClick={load}
-              disabled={loading}
-              aria-label="刷新"
-              className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900 disabled:opacity-50"
-            >
-              <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
             </button>
           </div>
         </div>
@@ -383,7 +368,7 @@ export function SchedulePanel() {
       </div>
 
       {/* 右侧日程列表 */}
-      <div className="pointer-events-auto fixed bottom-6 right-6 top-24 z-10 hidden w-80 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm xl:flex">
+      <aside className="hidden w-96 shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-900/15 bg-white/20 shadow-sm xl:flex">
         <div className="flex items-center justify-between border-b border-neutral-900/10 px-5 py-4">
           <h3 className="text-sm font-semibold text-neutral-900">
             日程列表
@@ -393,6 +378,23 @@ export function SchedulePanel() {
               </span>
             )}
           </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEditor({ mode: "create" })}
+              className="flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-50 transition-colors hover:bg-neutral-700"
+            >
+              <CalendarPlus className="h-3.5 w-3.5" />
+              添加日程
+            </button>
+            <button
+              onClick={load}
+              disabled={loading}
+              aria-label="刷新"
+              className="rounded-full p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900 disabled:opacity-50"
+            >
+              <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            </button>
+          </div>
         </div>
         <div className="border-b border-neutral-900/10 px-5 py-3">
           <div className="relative">
@@ -400,7 +402,7 @@ export function SchedulePanel() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="搜索标题、备注或地点"
+              placeholder="搜索标题、内容或地点"
               className="w-full rounded-lg border border-neutral-900/15 bg-white/60 py-2 pl-9 pr-8 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
             />
             {query && (
@@ -441,9 +443,9 @@ export function SchedulePanel() {
                         {e.title}
                       </span>
                       <span className="mt-0.5 block text-xs text-neutral-500">{rangeText(e)}</span>
-                      {e.remark && (
+                      {e.content && (
                         <span className="mt-0.5 block truncate text-xs text-neutral-400">
-                          {e.remark}
+                          {e.content}
                         </span>
                       )}
                     </span>
@@ -453,6 +455,7 @@ export function SchedulePanel() {
             </ul>
           )}
         </div>
+      </aside>
       </div>
 
       {/* 日程详情弹窗 */}
@@ -486,8 +489,8 @@ export function SchedulePanel() {
             {detail.location && (
               <p className="mt-1 text-sm text-neutral-500">地点：{detail.location}</p>
             )}
-            {detail.remark && (
-              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-500">{detail.remark}</p>
+            {detail.content && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-500">{detail.content}</p>
             )}
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -549,12 +552,16 @@ function EventEditor({
   const [location, setLocation] = useState(
     state.mode === "edit" ? (state.event.location ?? "") : ""
   );
-  const [remark, setRemark] = useState(state.mode === "edit" ? (state.event.remark ?? "") : "");
+  const [content, setContent] = useState(state.mode === "edit" ? (state.event.content ?? "") : "");
   const [error, setError] = useState<string | null>(null);
 
   const submit = () => {
     if (!title.trim()) {
       setError("标题不能为空");
+      return;
+    }
+    if (!content.trim()) {
+      setError("内容不能为空");
       return;
     }
     if (!range.startDate || !range.endDate) {
@@ -569,7 +576,7 @@ function EventEditor({
       return;
     }
     setError(null);
-    onSubmit({ title: title.trim(), ...range, location, remark });
+    onSubmit({ title: title.trim(), ...range, location, content: content.trim() });
   };
 
   return (
@@ -610,9 +617,9 @@ function EventEditor({
             className="w-full rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
           />
           <textarea
-            value={remark}
-            onChange={(e) => setRemark(e.target.value)}
-            placeholder="备注（可选）"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="内容"
             rows={2}
             className="w-full resize-none rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900"
           />

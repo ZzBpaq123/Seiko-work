@@ -68,10 +68,10 @@ public class Event extends BaseEntity {
     private String location;
 
     /**
-     * 备注
+     * 内容
      */
-    @TableField("remark")
-    @Schema(description = "备注")
-    private String remark;
+    @TableField("content")
+    @Schema(description = "内容")
+    private String content;
 
 }

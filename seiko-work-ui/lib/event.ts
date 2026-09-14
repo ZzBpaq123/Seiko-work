@@ -8,7 +8,7 @@ export interface CalendarEvent {
   endTime: string;
   isAllDay: number;
   location: string | null;
-  remark: string | null;
+  content: string | null;
 }
 
 export interface CalendarEventParams {
@@ -19,7 +19,7 @@ export interface CalendarEventParams {
   startTime?: string; // HH:mm，非全天时必填
   endTime?: string; // HH:mm，非全天时必填
   location?: string;
-  remark?: string;
+  content: string;
 }
 
 function toBody(params: CalendarEventParams) {
@@ -36,7 +36,7 @@ function toBody(params: CalendarEventParams) {
     ),
     isAllDay: allDay ? 1 : 0,
     location: params.location?.trim() || null,
-    remark: params.remark?.trim() || null,
+    content: params.content.trim(),
   };
 }
 
