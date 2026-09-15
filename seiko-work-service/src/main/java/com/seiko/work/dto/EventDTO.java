@@ -1,7 +1,9 @@
 package com.seiko.work.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -44,5 +46,12 @@ public class EventDTO implements Serializable {
     @NotBlank(message = "内容不能为空")
     @Schema(description = "内容", requiredMode = Schema.RequiredMode.REQUIRED)
     private String content;
+
+    @JsonIgnore
+    @AssertTrue(message = "结束时间不能早于开始时间")
+    @Schema(hidden = true)
+    public boolean isEndTimeAfterStartTime() {
+        return startTime == null || endTime == null || !endTime.before(startTime);
+    }
 
 }

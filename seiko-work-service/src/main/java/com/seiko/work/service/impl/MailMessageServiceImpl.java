@@ -6,7 +6,6 @@ import com.seiko.work.vo.MailMessageVO;
 import com.seiko.work.exception.BusinessException;
 import com.seiko.work.service.MailMessageService;
 import com.seiko.work.service.MailService;
-import org.eclipse.angus.mail.imap.IMAPFolder;
 import jakarta.mail.Address;
 import jakarta.mail.BodyPart;
 import jakarta.mail.Flags;
@@ -17,12 +16,17 @@ import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
+import jakarta.mail.FetchProfile;
+import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.InternetAddress;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.angus.mail.imap.IMAPFolder;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -38,14 +42,37 @@ public class MailMessageServiceImpl implements MailMessageService {
 
     private static final String INBOX = "INBOX";
 
+    /** IMAP 连接超时（毫秒）：服务器不可达时快速失败，避免线程无限阻塞 */
+    private static final String IMAP_CONNECTION_TIMEOUT = "5000";
+
+    /** IMAP 读写超时（毫秒） */
+    private static final String IMAP_READ_TIMEOUT = "10000";
+
+    /** 单段正文最大读取字节数（1MB），超出截断 */
+    private static final int MAX_TEXT_BYTES = 1024 * 1024;
+
+    /** multipart 递归解析最大深度，防止恶意深层嵌套导致栈溢出 */
+    private static final int MAX_PARSE_DEPTH = 10;
+
     private final MailService mailService;
 
     @Override
-    public List<MailMessageVO> listAll(Long userId) {
+    public List<MailMessageVO> listRecent(Long userId, int limit) {
         Mail account = requireAccount(userId);
         try (Store store = connect(account); Folder folder = store.getFolder(INBOX)) {
             folder.open(Folder.READ_ONLY);
-            Message[] messages = folder.getMessages();
+            int count = folder.getMessageCount();
+            if (count == 0) {
+                return List.of();
+            }
+            // 只取最近的 limit 封，倒序窗口 [start, count]
+            int start = Math.max(1, count - limit + 1);
+            Message[] messages = folder.getMessages(start, count);
+            // 批量拉取信封与标志，避免逐封往返
+            FetchProfile profile = new FetchProfile();
+            profile.add(FetchProfile.Item.ENVELOPE);
+            profile.add(FetchProfile.Item.FLAGS);
+            folder.fetch(messages, profile);
             List<MailMessageVO> list = new ArrayList<>(messages.length);
             for (Message message : messages) {
                 list.add(parseMessage(message, false));
@@ -106,6 +133,8 @@ public class MailMessageServiceImpl implements MailMessageService {
         props.put("mail.imap.host", account.getImapHost());
         props.put("mail.imap.port", String.valueOf(account.getImapPort()));
         props.put("mail.imap.ssl.enable", String.valueOf(!Boolean.FALSE.equals(account.getSslEnable())));
+        props.put("mail.imap.connectiontimeout", IMAP_CONNECTION_TIMEOUT);
+        props.put("mail.imap.timeout", IMAP_READ_TIMEOUT);
         // 读取邮件时不自动设置已读标记
         props.put("mail.imap.peek", "true");
         Session session = Session.getInstance(props);
@@ -115,7 +144,13 @@ public class MailMessageServiceImpl implements MailMessageService {
     }
 
     private Message getMessageByUid(Folder folder, String messageUid) throws MessagingException {
-        return ((IMAPFolder) folder).getMessageByUID(Long.parseLong(messageUid));
+        final long uid;
+        try {
+            uid = Long.parseLong(messageUid);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "邮件UID格式错误");
+        }
+        return ((IMAPFolder) folder).getMessageByUID(uid);
     }
 
     private MailMessageVO parseMessage(Message message, boolean withContent) throws MessagingException, IOException {
@@ -133,23 +168,36 @@ public class MailMessageServiceImpl implements MailMessageService {
                 ? message.getReceivedDate() : message.getSentDate());
         mail.setIsRead(message.isSet(Flags.Flag.SEEN));
         if (withContent) {
-            parseContent(message, mail);
+            parseContent(message, mail, 0);
         } else {
-            mail.setHasAttachment(hasAttachment(message));
+            // 列表场景不下载正文，仅按结构预判附件标志（精确判断见详情接口）
+            mail.setHasAttachment(predictHasAttachment(message));
         }
         return mail;
     }
 
     /**
+     * 不下载正文预判是否有附件：整封附件、multipart/mixed（RFC 2046 中附件标准容器）
+     */
+    private boolean predictHasAttachment(Message message) throws MessagingException {
+        return message.getFileName() != null
+                || Part.ATTACHMENT.equalsIgnoreCase(message.getDisposition())
+                || message.isMimeType("multipart/mixed");
+    }
+
+    /**
      * 递归解析正文内容，text/plain 优先作为纯文本正文，text/html 保存原始HTML
      */
-    private void parseContent(Part part, MailMessageVO mail) throws MessagingException, IOException {
+    private void parseContent(Part part, MailMessageVO mail, int depth) throws MessagingException, IOException {
+        if (depth > MAX_PARSE_DEPTH) {
+            return;
+        }
         if (part.isMimeType("text/plain") && mail.getContentText() == null) {
-            mail.setContentText((String) part.getContent());
+            mail.setContentText(readTextContent(part));
             return;
         }
         if (part.isMimeType("text/html") && mail.getContentHtml() == null) {
-            mail.setContentHtml((String) part.getContent());
+            mail.setContentHtml(readTextContent(part));
             return;
         }
         if (part.isMimeType("multipart/*")) {
@@ -159,22 +207,27 @@ public class MailMessageServiceImpl implements MailMessageService {
                 if (isAttachment(bodyPart)) {
                     mail.setHasAttachment(true);
                 }
-                parseContent(bodyPart, mail);
+                parseContent(bodyPart, mail, depth + 1);
             }
         }
     }
 
-    private boolean hasAttachment(Part part) throws MessagingException, IOException {
-        if (part.isMimeType("multipart/*")) {
-            Multipart multipart = (Multipart) part.getContent();
-            for (int i = 0; i < multipart.getCount(); i++) {
-                if (hasAttachment(multipart.getBodyPart(i))) {
-                    return true;
-                }
+    /**
+     * 读取 text/* 内容，最多读 MAX_TEXT_BYTES 字节，超出截断，防止超大正文撑爆内存
+     */
+    private String readTextContent(Part part) throws IOException, MessagingException {
+        try (InputStream in = part.getInputStream();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int remaining = MAX_TEXT_BYTES;
+            int read;
+            while (remaining > 0 && (read = in.read(buffer, 0, Math.min(buffer.length, remaining))) != -1) {
+                out.write(buffer, 0, read);
+                remaining -= read;
             }
-            return false;
+            String charset = new ContentType(part.getContentType()).getParameter("charset");
+            return out.toString(charset != null ? charset : "UTF-8");
         }
-        return isAttachment(part);
     }
 
     private boolean isAttachment(Part part) throws MessagingException {

@@ -28,7 +28,6 @@
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <sa-token.version>1.39.0</sa-token.version>
         <springdoc.version>2.8.3</springdoc.version>
-        <hutool.version>5.8.25</hutool.version>
         <mysql.version>8.0.33</mysql.version>
     </properties>
 
@@ -52,11 +51,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
         <dependency>
@@ -99,18 +93,13 @@
 
         <!-- Sa-Token 限流功能已包含在核心包中，无需额外依赖 -->
 
+        <!-- spring-boot-starter-aop 为 @Transactional 声明式事务提供代理支持，勿删 -->
+
         <!-- ========== API Documentation ========== -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
-        </dependency>
-
-        <!-- ========== Utility Libraries ========== -->
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>${hutool.version}</version>
         </dependency>
 
         <!-- ========== Lombok ========== -->

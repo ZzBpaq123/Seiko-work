@@ -2,19 +2,17 @@ package com.seiko.work.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seiko.work.base.Result;
-import com.seiko.work.base.ResultCode;
-import com.seiko.work.exception.BusinessException;
 import com.seiko.work.dto.EventDTO;
-import com.seiko.work.entity.Event;
 import com.seiko.work.service.EventService;
+import com.seiko.work.vo.EventVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,66 +43,45 @@ public class EventController {
 
     @GetMapping
     @Operation(summary = "日程列表")
-    public Result<Page<Event>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        LambdaQueryWrapper<Event> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Event::getUserId, userId)
-                .orderByDesc(Event::getStartTime);
-        return Result.success(eventService.page(new Page<>(current, size), wrapper));
+    public Result<Page<EventVO>> page(
+            @RequestParam(defaultValue = "1") @Min(1) Long current,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Long size) {
+        return Result.success(eventService.pageEvents(StpUtil.getLoginIdAsLong(), current, size));
     }
 
     @GetMapping("/range")
     @Operation(summary = "查询时间范围内的日程")
-    public Result<List<Event>> range(
+    public Result<List<EventVO>> range(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date start,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date end) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        return Result.success(eventService.listByTimeRange(userId, start, end));
+        return Result.success(eventService.listByTimeRange(StpUtil.getLoginIdAsLong(), start, end));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "日程详情")
-    public Result<Event> getById(@PathVariable Long id) {
-        Event event = getEventById(id);
-        return Result.success(event);
+    public Result<EventVO> getById(@PathVariable Long id) {
+        return Result.success(eventService.getOwned(id, StpUtil.getLoginIdAsLong()));
     }
 
     @PostMapping
     @Operation(summary = "创建日程")
     public Result<Void> save(@Valid @RequestBody EventDTO dto) {
-        Event event = new Event();
-        BeanUtils.copyProperties(dto, event);
-        event.setUserId(StpUtil.getLoginIdAsLong());
-        eventService.save(event);
+        eventService.createEvent(StpUtil.getLoginIdAsLong(), dto);
         return Result.success();
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新日程")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody EventDTO dto) {
-        Event event = getEventById(id);
-        BeanUtils.copyProperties(dto, event);
-        eventService.updateById(event);
+        eventService.updateEvent(id, StpUtil.getLoginIdAsLong(), dto);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除日程")
     public Result<Void> delete(@PathVariable Long id) {
-        getEventById(id);
-        eventService.removeById(id);
+        eventService.deleteEvent(id, StpUtil.getLoginIdAsLong());
         return Result.success();
-    }
-
-    private Event getEventById(Long id) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        Event event = eventService.getById(id);
-        if (event == null || !event.getUserId().equals(userId)) {
-            throw new BusinessException(ResultCode.NOT_FOUND);
-        }
-        return event;
     }
 
 }

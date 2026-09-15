@@ -36,7 +36,7 @@ public final class CryptoUtil {
     public static synchronized void init(String passphrase) {
         if (passphrase == null || passphrase.isBlank()) {
             throw new IllegalStateException(
-                    "敏感字段加密密钥未配置：请设置环境变量 CRYPTO_KEY（或配置项 blog.security.crypto-key）");
+                    "敏感字段加密密钥未配置：请设置环境变量 CRYPTO_KEY（或配置项 seiko.security.crypto-key）");
         }
         byte[] digest;
         try {

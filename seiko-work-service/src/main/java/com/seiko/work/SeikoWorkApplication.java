@@ -3,7 +3,6 @@ package com.seiko.work;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cache.annotation.EnableCaching;
 
 /**
  * Seiko Work Service 启动类
@@ -11,7 +10,6 @@ import org.springframework.cache.annotation.EnableCaching;
  * @author seiko
  */
 @SpringBootApplication
-@EnableCaching
 @MapperScan("com.seiko.work.**.mapper")
 public class SeikoWorkApplication {
 
@@ -25,7 +23,7 @@ public class SeikoWorkApplication {
                 |____/ \\___|_|_|\\_\\___/     \\_/\\_/ \\___/|_|  |_|\\_\\
 
                 Seiko Work Service started successfully!
-                API docs: http://localhost:8080/api/swagger-ui.html
+                API docs: http://localhost:1001/swagger-ui.html
                 """);
     }
 }

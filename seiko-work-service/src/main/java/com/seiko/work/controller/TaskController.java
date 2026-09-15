@@ -2,19 +2,17 @@ package com.seiko.work.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seiko.work.base.Result;
-import com.seiko.work.base.ResultCode;
-import com.seiko.work.exception.BusinessException;
 import com.seiko.work.dto.TaskDTO;
-import com.seiko.work.entity.Task;
 import com.seiko.work.service.TaskService;
+import com.seiko.work.vo.TaskVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,65 +41,43 @@ public class TaskController {
 
     @GetMapping
     @Operation(summary = "任务列表")
-    public Result<Page<Task>> page(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        LambdaQueryWrapper<Task> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Task::getUserId, userId)
-                .orderByDesc(Task::getPriority)
-                .orderByAsc(Task::getPlanDate);
-        return Result.success(taskService.page(new Page<>(current, size), wrapper));
+    public Result<Page<TaskVO>> page(
+            @RequestParam(defaultValue = "1") @Min(1) Long current,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Long size) {
+        return Result.success(taskService.pageTasks(StpUtil.getLoginIdAsLong(), current, size));
     }
 
     @GetMapping("/today")
     @Operation(summary = "今日工作")
-    public Result<List<Task>> today() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        return Result.success(taskService.listToday(userId));
+    public Result<List<TaskVO>> today() {
+        return Result.success(taskService.listToday(StpUtil.getLoginIdAsLong()));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "任务详情")
-    public Result<Task> getById(@PathVariable Long id) {
-        Task task = getTaskById(id);
-        return Result.success(task);
+    public Result<TaskVO> getById(@PathVariable Long id) {
+        return Result.success(taskService.getOwned(id, StpUtil.getLoginIdAsLong()));
     }
 
     @PostMapping
     @Operation(summary = "创建任务")
     public Result<Void> save(@Valid @RequestBody TaskDTO dto) {
-        Task task = new Task();
-        BeanUtils.copyProperties(dto, task);
-        task.setUserId(StpUtil.getLoginIdAsLong());
-        taskService.save(task);
+        taskService.createTask(StpUtil.getLoginIdAsLong(), dto);
         return Result.success();
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新任务")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody TaskDTO dto) {
-        Task task = getTaskById(id);
-        BeanUtils.copyProperties(dto, task);
-        taskService.updateById(task);
+        taskService.updateTask(id, StpUtil.getLoginIdAsLong(), dto);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除任务")
     public Result<Void> delete(@PathVariable Long id) {
-        getTaskById(id);
-        taskService.removeById(id);
+        taskService.deleteTask(id, StpUtil.getLoginIdAsLong());
         return Result.success();
-    }
-
-    private Task getTaskById(Long id) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        Task task = taskService.getById(id);
-        if (task == null || !task.getUserId().equals(userId)) {
-            throw new BusinessException(ResultCode.NOT_FOUND);
-        }
-        return task;
     }
 
 }

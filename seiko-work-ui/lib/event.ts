@@ -2,7 +2,6 @@ import { request } from "@/lib/axios";
 
 export interface CalendarEvent {
   id: number;
-  userId: number;
   title: string;
   startTime: string;
   endTime: string;
@@ -69,5 +68,5 @@ export function updateEvent(id: number, params: CalendarEventParams) {
 }
 
 export function deleteEvent(id: number) {
-  return request<void>({ method: "DELETE", url: `/api/calendar-events/${id}` });
+  return request<void>({ method: "DELETE", url: `/api/events/${id}` });
 }

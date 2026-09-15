@@ -2,7 +2,6 @@ import { request } from "@/lib/axios";
 
 export interface MailAccount {
   id: number;
-  userId: number;
   email: string;
   imapHost: string | null;
   imapPort: number | null;

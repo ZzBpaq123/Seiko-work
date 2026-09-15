@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 @Component
-@ConfigurationProperties(prefix = "blog.security")
+@ConfigurationProperties(prefix = "seiko.security")
 public class SecurityProperties {
 
     /**

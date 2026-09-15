@@ -10,12 +10,13 @@ import java.util.List;
 public interface MailMessageService {
 
     /**
-     * 获取收件箱所有邮件（按收取时间倒序，不含正文）
+     * 获取收件箱最近 limit 封邮件（按收取时间倒序，仅信封信息，不含正文）
      *
      * @param userId 用户ID
+     * @param limit  返回封数上限（1-100）
      * @return 邮件列表
      */
-    List<MailMessageVO> listAll(Long userId);
+    List<MailMessageVO> listRecent(Long userId, int limit);
 
     /**
      * 根据邮件UID获取邮件详情（含正文）
