@@ -12,7 +12,7 @@
 }
 
 :root {
-  --background: #ffffff;
+  --background: #f8f6f0;
   --foreground: #171717;
   --card: #ffffff;
   --card-foreground: #171717;
@@ -30,9 +30,17 @@
 }
 
 body {
-  background-color: #f8f6f0;
-  color: #171717;
+  background-color: var(--background);
+  color: var(--foreground);
   overflow-x: hidden;
+}
+
+/* 主题切换动画：关闭默认交叉淡入淡出，改由 ThemeToggle 以 clip-path 圆形
+   揭示动画驱动（深色→浅色从按钮展开，浅色→深色收缩到按钮） */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 canvas {
@@ -59,6 +67,11 @@ canvas {
   offset-rotate: auto;
   pointer-events: none;
   animation: runner-move 2s linear infinite;
+}
+
+/* 深色主题下选中线段反色 */
+.dark .mail-runner {
+  background: rgba(255, 255, 255, 0.6);
 }
 
 /* 面板：淡入 + 轻微上移 + 缩放，出场反向 */

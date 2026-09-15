@@ -65,12 +65,12 @@ function MonthGrid({
   const cells = Array.from({ length: 42 }, (_, i) => addDays(first, i - offset));
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 text-center text-xs font-medium text-neutral-700">
+      <div className="mb-1 text-center text-xs font-medium text-neutral-700 dark:text-neutral-300">
         {view.getFullYear()}年{view.getMonth() + 1}月
       </div>
       <div className="mb-0.5 grid grid-cols-7">
         {WEEKDAYS.map((w) => (
-          <span key={w} className="text-center text-[10px] text-neutral-400">
+          <span key={w} className="text-center text-[10px] text-neutral-400 dark:text-neutral-500">
             {w}
           </span>
         ))}
@@ -88,10 +88,10 @@ function MonthGrid({
               onClick={() => onPick(d)}
               className={cn(
                 "flex h-6 cursor-pointer items-center justify-center rounded text-[11px] transition-colors select-none",
-                inMonth ? "text-neutral-700" : "text-neutral-300",
-                !edge && "hover:bg-neutral-900/10",
-                inRange && "bg-neutral-900/5",
-                edge && "bg-neutral-900 text-white hover:bg-neutral-700",
+                inMonth ? "text-neutral-700 dark:text-neutral-300" : "text-neutral-300 dark:text-neutral-600",
+                !edge && "hover:bg-neutral-900/10 dark:bg-white/10",
+                inRange && "bg-neutral-900/5 dark:bg-white/5",
+                edge && "bg-neutral-900 dark:bg-neutral-50 text-white hover:bg-neutral-700 dark:hover:bg-neutral-300",
                 dateStr === today && !edge && "font-semibold ring-1 ring-neutral-900/30"
               )}
             >
@@ -175,17 +175,17 @@ export function DateTimeRangePicker({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex w-full items-center gap-2 rounded-lg border border-neutral-900/15 bg-white/80 px-3 py-2 text-sm outline-none transition-colors",
-          "hover:border-neutral-900/40 focus:border-neutral-900",
-          !value.startDate && "text-neutral-400"
+          "flex w-full items-center gap-2 rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-3 py-2 text-sm outline-none transition-colors",
+          "hover:border-neutral-900 dark:hover:border-white/40 dark:hover:border-white/40 focus:border-neutral-900 dark:focus:border-white",
+          !value.startDate && "text-neutral-400 dark:text-neutral-500"
         )}
       >
-        <CalendarDays className="h-4 w-4 shrink-0 text-neutral-400" />
+        <CalendarDays className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
         <span className="min-w-0 flex-1 truncate text-left">{text}</span>
       </button>
 
       {open && (
-        <div className="absolute left-1/2 top-full z-30 mt-1 w-[21rem] -translate-x-1/2 rounded-xl border border-neutral-900/15 bg-white/95 p-3 shadow-lg">
+        <div className="absolute left-1/2 top-full z-30 mt-1 w-[21rem] -translate-x-1/2 rounded-xl border border-neutral-900/15 dark:border-white/15 bg-white/95 dark:bg-neutral-900 p-3 shadow-lg">
           {/* 快捷选项 */}
           <div className="flex flex-wrap gap-1.5">
             {shortcuts().map((s) => (
@@ -193,7 +193,7 @@ export function DateTimeRangePicker({
                 key={s.label}
                 type="button"
                 onClick={() => applyShortcut(s.range)}
-                className="rounded-md border border-neutral-900/10 px-2 py-1 text-xs text-neutral-600 transition-colors hover:border-neutral-900 hover:text-neutral-900"
+                className="rounded-md border border-neutral-900/10 dark:border-white/10 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white hover:text-neutral-900 dark:hover:text-neutral-50"
               >
                 {s.label}
               </button>
@@ -206,7 +206,7 @@ export function DateTimeRangePicker({
               type="button"
               aria-label="上个月"
               onClick={() => shiftMonth(-1)}
-              className="absolute top-0 left-0 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+              className="absolute top-0 left-0 rounded-full p-1 text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -214,7 +214,7 @@ export function DateTimeRangePicker({
               type="button"
               aria-label="下个月"
               onClick={() => shiftMonth(1)}
-              className="absolute top-0 right-0 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-900/5 hover:text-neutral-900"
+              className="absolute top-0 right-0 rounded-full p-1 text-neutral-400 dark:text-neutral-500 transition-colors hover:bg-neutral-900/5 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-50"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -239,8 +239,8 @@ export function DateTimeRangePicker({
           </div>
 
           {/* 全天 / 时间 */}
-          <div className="mt-2 flex items-center justify-between gap-2 border-t border-neutral-900/10 pt-2">
-            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-neutral-700">
+          <div className="mt-2 flex items-center justify-between gap-2 border-t border-neutral-900/10 dark:border-white/10 pt-2">
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={value.isAllDay}
@@ -255,14 +255,14 @@ export function DateTimeRangePicker({
                   type="time"
                   value={value.startTime}
                   onChange={(e) => patch({ startTime: e.target.value })}
-                  className="w-[6.5rem] rounded-md border border-neutral-900/15 bg-white/80 px-2 py-1 text-xs text-neutral-900 outline-none transition-colors focus:border-neutral-900"
+                  className="w-[6.5rem] rounded-md border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100 outline-none transition-colors focus:border-neutral-900 dark:focus:border-white"
                 />
-                <span className="text-[10px] text-neutral-400">至</span>
+                <span className="text-[10px] text-neutral-400 dark:text-neutral-500">至</span>
                 <input
                   type="time"
                   value={value.endTime}
                   onChange={(e) => patch({ endTime: e.target.value })}
-                  className="w-[6.5rem] rounded-md border border-neutral-900/15 bg-white/80 px-2 py-1 text-xs text-neutral-900 outline-none transition-colors focus:border-neutral-900"
+                  className="w-[6.5rem] rounded-md border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100 outline-none transition-colors focus:border-neutral-900 dark:focus:border-white"
                 />
               </div>
             )}

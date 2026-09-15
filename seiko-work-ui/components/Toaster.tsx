@@ -24,7 +24,7 @@ const TYPE_STYLES: Record<
   },
   info: {
     icon: Info,
-    className: "border-neutral-900/15 bg-white/95 text-neutral-700",
+    className: "border-neutral-900/15 dark:border-white/15 bg-white/95 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300",
   },
 };
 

@@ -18,7 +18,7 @@ export default function Home() {
       {pageOpen && (
         <div
           aria-hidden
-          className="fixed inset-0 z-5 bg-[#FAFAF7]/75 backdrop-blur-none"
+          className="fixed inset-0 z-5 bg-[#FAFAF7]/15 backdrop-blur-none dark:bg-black/10"
         />
       )}
       <SiteHeader />
