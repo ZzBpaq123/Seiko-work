@@ -28,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -77,27 +78,16 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
-        // IP 发送次数限制
+        // IP 发送次数限制：仅检查不计数，发送成功后才计数
         String ipCountKey = RedisKey.EMAIL_IP_COUNT.formatted(ip);
-        Long count = redisTemplate.opsForValue().increment(ipCountKey);
-        if (count != null && count == 1) {
-            redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
-        }
-        if (count != null && count > securityProperties.getEmailCode().getIpMaxSendsPerHour()) {
+        String count = redisTemplate.opsForValue().get(ipCountKey);
+        if (count != null && Long.parseLong(count) >= securityProperties.getEmailCode().getIpMaxSendsPerHour()) {
             redisTemplate.opsForValue().set(ipLockKey, "1",
                     Duration.ofSeconds(securityProperties.getEmailCode().getIpLockSeconds()));
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
-        // 生成并存储验证码
         String code = EmailCodeUtil.generate(securityProperties.getEmailCode().getCodeLength());
-        String codeKey = RedisKey.EMAIL_CODE.formatted(email);
-        redisTemplate.opsForValue().set(codeKey, code,
-                Duration.ofSeconds(securityProperties.getEmailCode().getCodeTtlSeconds()));
-
-        // 设置发送冷却
-        redisTemplate.opsForValue().set(cooldownKey, "1",
-                Duration.ofSeconds(securityProperties.getEmailCode().getResendCooldownSeconds()));
 
         // 发送邮件
         try {
@@ -113,6 +103,18 @@ public class AuthServiceImpl implements AuthService {
             log.error("发送验证码邮件失败: ", e);
             throw new BusinessException(ResultCode.VERIFICATION_CODE_SEND_FAILED);
         }
+
+        // 发送成功后再写入验证码与冷却，失败不留脏状态
+        String codeKey = RedisKey.EMAIL_CODE.formatted(email);
+        redisTemplate.opsForValue().set(codeKey, code,
+                Duration.ofSeconds(securityProperties.getEmailCode().getCodeTtlSeconds()));
+        redisTemplate.opsForValue().set(cooldownKey, "1",
+                Duration.ofSeconds(securityProperties.getEmailCode().getResendCooldownSeconds()));
+
+        Long sends = redisTemplate.opsForValue().increment(ipCountKey);
+        if (sends != null && sends == 1) {
+            redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
+        }
     }
 
     @Override
@@ -126,7 +128,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
         }
 
-        if (userService.getByUsername(dto.getUsername()) != null) {
+        String username = dto.getUsername() != null && !dto.getUsername().isBlank() ? dto.getUsername().trim() : null;
+        if (userService.getByUsername(username) != null) {
             throw new BusinessException(ResultCode.USERNAME_EXISTS);
         }
 
@@ -135,14 +138,18 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = new User();
-        user.setUsername(dto.getUsername());
+        user.setUsername(username);
         user.setEmail(email);
         user.setPassword(PasswordUtil.hash(dto.getPassword()));
         user.setStatus(1);
-        userService.save(user);
+        try {
+            userService.save(user);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ResultCode.CONFLICT.getCode(), "用户名或邮箱已被占用");
+        }
 
         redisTemplate.delete(codeKey);
-        log.info("用户 {} 注册成功", dto.getUsername());
+        log.info("用户 {} 注册成功", username);
     }
 
     @Override
@@ -206,26 +213,29 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String ipCountKey = RedisKey.PHONE_IP_COUNT.formatted(ip);
-        Long count = redisTemplate.opsForValue().increment(ipCountKey);
-        if (count != null && count == 1) {
-            redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
-        }
-        if (count != null && count > securityProperties.getPhoneCode().getIpMaxSendsPerHour()) {
+        String count = redisTemplate.opsForValue().get(ipCountKey);
+        if (count != null && Long.parseLong(count) >= securityProperties.getPhoneCode().getIpMaxSendsPerHour()) {
             redisTemplate.opsForValue().set(ipLockKey, "1",
                     Duration.ofSeconds(securityProperties.getPhoneCode().getIpLockSeconds()));
             throw new BusinessException(ResultCode.VERIFICATION_CODE_TOO_FREQUENT);
         }
 
         String code = EmailCodeUtil.generate(securityProperties.getPhoneCode().getCodeLength());
-        String codeKey = RedisKey.PHONE_CODE.formatted(phone);
-        redisTemplate.opsForValue().set(codeKey, code,
-                Duration.ofSeconds(securityProperties.getPhoneCode().getCodeTtlSeconds()));
-
-        redisTemplate.opsForValue().set(cooldownKey, "1",
-                Duration.ofSeconds(securityProperties.getPhoneCode().getResendCooldownSeconds()));
 
         smsService.send(phone, code);
         log.info("已向手机号 {} 发送验证码", phone);
+
+        // 发送成功后再写入验证码与冷却，失败不留脏状态
+        String codeKey = RedisKey.PHONE_CODE.formatted(phone);
+        redisTemplate.opsForValue().set(codeKey, code,
+                Duration.ofSeconds(securityProperties.getPhoneCode().getCodeTtlSeconds()));
+        redisTemplate.opsForValue().set(cooldownKey, "1",
+                Duration.ofSeconds(securityProperties.getPhoneCode().getResendCooldownSeconds()));
+
+        Long sends = redisTemplate.opsForValue().increment(ipCountKey);
+        if (sends != null && sends == 1) {
+            redisTemplate.expire(ipCountKey, 1, TimeUnit.HOURS);
+        }
     }
 
     @Override
@@ -239,7 +249,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
         }
 
-        if (userService.getByUsername(dto.getUsername()) != null) {
+        String username = dto.getUsername() != null && !dto.getUsername().isBlank() ? dto.getUsername().trim() : null;
+        if (userService.getByUsername(username) != null) {
             throw new BusinessException(ResultCode.USERNAME_EXISTS);
         }
 
@@ -248,16 +259,20 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = new User();
-        user.setUsername(dto.getUsername());
+        user.setUsername(username);
         user.setPhone(phone);
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
             user.setPassword(PasswordUtil.hash(dto.getPassword()));
         }
         user.setStatus(1);
-        userService.save(user);
+        try {
+            userService.save(user);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ResultCode.CONFLICT.getCode(), "用户名或手机号已被占用");
+        }
 
         redisTemplate.delete(codeKey);
-        log.info("用户 {} 手机号注册成功", dto.getUsername());
+        log.info("用户 {} 手机号注册成功", username);
     }
 
     @Override
@@ -404,7 +419,11 @@ public class AuthServiceImpl implements AuthService {
         String avatar = dto.getAvatar() != null && !dto.getAvatar().isBlank() ? dto.getAvatar().trim() : null;
         user.setAvatar(avatar);
 
-        userService.updateById(user);
+        try {
+            userService.updateById(user);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ResultCode.CONFLICT.getCode(), "用户名、邮箱或手机号已被占用");
+        }
         log.info("用户 {} 修改个人信息成功", user.getUsername());
         return convertToVO(user);
     }
