@@ -1,7 +1,6 @@
 package com.seiko.work.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.core.util.DesensitizedUtil;
 import com.seiko.work.base.ResultCode;
 import com.seiko.work.config.properties.SecurityProperties;
 import com.seiko.work.constant.RedisKey;
@@ -422,8 +421,6 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             throw new BusinessException(ResultCode.TOKEN_INVALID);
         }
-        DesensitizedUtil.email(user.getEmail());
-        DesensitizedUtil.mobilePhone(user.getPhone());
         return convertToVO(user);
     }
 
