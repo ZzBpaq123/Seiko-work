@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Loader2,
   PenLine,
+  PiggyBank,
   Plus,
   Receipt,
   RotateCw,
@@ -13,8 +14,10 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { addDays, fmtAmount, fmtDate, parseDate } from "@/lib/date";
 import { clearHash, useHash } from "@/hooks/useHash";
 import { PanelReveal } from "@/components/PanelReveal";
+import { SavingsGoalDialog } from "@/components/SavingsGoalDialog";
 import {
   createBill,
   deleteBill,
@@ -61,22 +64,6 @@ const CATEGORY_PRESETS: Record<BillType, string[]> = {
 const WEEKDAY_CN = ["日", "一", "二", "三", "四", "五", "六"];
 
 const PAGE_SIZE = 20;
-
-function fmtDate(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-// 手动解析避免 new Date("2026-10-12") 被当成 UTC 导致日期偏移
-function parseDate(s: string) {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function addDays(d: Date, n: number) {
-  const next = new Date(d);
-  next.setDate(next.getDate() + n);
-  return next;
-}
 
 /** 一周的第一天（周一），与后端 ISO 周口径一致 */
 function startOfWeek(d: Date) {
@@ -168,10 +155,6 @@ function dayLabel(dateStr: string) {
   return base;
 }
 
-function fmtAmount(n: number) {
-  return n.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 function failMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
 }
@@ -200,6 +183,7 @@ export function BillPanel() {
   const [detail, setDetail] = useState<BillRecord | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
 
   const open = useHash() === "#bill";
 
@@ -381,6 +365,13 @@ export function BillPanel() {
                 className="rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-2.5 py-1 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
               >
                 今天
+              </button>
+              <button
+                onClick={() => setGoalOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/60 dark:bg-neutral-800/60 px-2.5 py-1 text-xs text-neutral-700 dark:text-neutral-300 transition-colors hover:border-neutral-900 dark:hover:border-white"
+              >
+                <PiggyBank className="h-3.5 w-3.5" />
+                攒钱目标
               </button>
             </div>
           </div>
@@ -686,6 +677,9 @@ export function BillPanel() {
           onSubmit={handleSubmit}
         />
       )}
+
+      {/* 攒钱目标 */}
+      {goalOpen && <SavingsGoalDialog onClose={() => setGoalOpen(false)} />}
     </PanelReveal>
   );
 }
