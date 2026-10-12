@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Home, Mail } from "lucide-react";
+import { CalendarDays, Home, Mail, Wallet } from "lucide-react";
 import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import { useHash } from "@/hooks/useHash";
@@ -19,6 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "home", label: "首页", href: "#", icon: Home },
   { key: "mail", label: "邮箱", href: "#mail", icon: Mail },
   { key: "schedule", label: "日程", href: "#schedule", icon: CalendarDays },
+  { key: "bill", label: "记账", href: "#bill", icon: Wallet },
 ];
 
 function NavButton({

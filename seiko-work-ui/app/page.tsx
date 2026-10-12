@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SideNav } from "@/components/SideNav";
 import { MailPanel } from "@/components/MailPanel";
 import { SchedulePanel } from "@/components/SchedulePanel";
+import { BillPanel } from "@/components/BillPanel";
 import { LoginPanel } from "@/components/LoginPanel";
 import { useHash } from "@/hooks/useHash";
 
@@ -25,6 +26,7 @@ export default function Home() {
       <SideNav />
       <MailPanel />
       <SchedulePanel />
+      <BillPanel />
       <LoginPanel />
     </>
   );
