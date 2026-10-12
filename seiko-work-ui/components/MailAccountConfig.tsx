@@ -151,7 +151,7 @@ export function MailAccountConfig() {
                   type="checkbox"
                   checked={sslEnable}
                   onChange={(e) => setSslEnable(e.target.checked)}
-                  className="h-4 w-4 accent-neutral-900"
+                  className="h-4 w-4 accent-neutral-900 dark:accent-neutral-100"
                 />
                 启用 SSL
               </label>

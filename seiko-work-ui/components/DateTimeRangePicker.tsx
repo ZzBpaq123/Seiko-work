@@ -91,8 +91,8 @@ function MonthGrid({
                 inMonth ? "text-neutral-700 dark:text-neutral-300" : "text-neutral-300 dark:text-neutral-600",
                 !edge && "hover:bg-neutral-900/10 dark:bg-white/10",
                 inRange && "bg-neutral-900/5 dark:bg-white/5",
-                edge && "bg-neutral-900 dark:bg-neutral-50 text-white hover:bg-neutral-700 dark:hover:bg-neutral-300",
-                dateStr === today && !edge && "font-semibold ring-1 ring-neutral-900/30"
+                edge && "bg-neutral-900 dark:bg-neutral-50 text-white dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300",
+                dateStr === today && !edge && "font-semibold ring-1 ring-neutral-900/30 dark:ring-neutral-50/40"
               )}
             >
               {d.getDate()}
@@ -245,7 +245,7 @@ export function DateTimeRangePicker({
                 type="checkbox"
                 checked={value.isAllDay}
                 onChange={(e) => patch({ isAllDay: e.target.checked })}
-                className="h-3.5 w-3.5 accent-neutral-900"
+                className="h-3.5 w-3.5 accent-neutral-900 dark:accent-neutral-100"
               />
               全天
             </label>
