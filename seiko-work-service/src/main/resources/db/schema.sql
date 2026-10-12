@@ -112,3 +112,29 @@ CREATE TABLE IF NOT EXISTS `work_bill` (
     KEY `idx_user_type_date` (`user_id`, `type`, `bill_date`),
     KEY `idx_user_category_date` (`user_id`, `bill_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账单明细表';
+
+-- ============================================================================
+-- 攒钱目标（账单页「攒钱目标」弹窗）
+-- 一个用户一条配置：把每月收入按比例分配到若干档位，如
+-- 储蓄 70% / 日常开销 20% / 心愿 10%
+--
+-- 设计要点：
+--   1. 档位数量与名称都允许用户自定义，因此用 JSON 数组存一个字段，不拆子表：
+--      档位只有几行、永远整组读写、也不会按档位做条件查询，拆表只会徒增 join。
+--      后续若真需要按档位统计，再把 JSON 里的内容迁到子表即可。
+--   2. percent 为整数百分比，服务端校验各档合计必须等于 100。
+--   3. saving 标记该档是否为「储蓄档」，前端据此把「非储蓄档金额合计」当作
+--      本月可用预算，与实际支出做对比。
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS `work_savings_goal` (
+    `id`          BIGINT      AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    `user_id`     BIGINT      NOT NULL COMMENT '用户ID',
+    `name`        VARCHAR(50) NOT NULL DEFAULT '每月工资分配' COMMENT '目标名称',
+    `buckets`     JSON        NOT NULL COMMENT '分配档位数组：[{"name":"储蓄","percent":70,"saving":true}]，percent 合计必须为 100',
+    `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `is_deleted`  TINYINT     NOT NULL DEFAULT 0 COMMENT '逻辑删除标志：0-未删除，1-已删除',
+    `delete_time` DATETIME    DEFAULT NULL COMMENT '删除时间',
+    UNIQUE KEY `uk_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='攒钱目标配置表';

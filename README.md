@@ -32,7 +32,7 @@ doc/                  # 项目文档
 mysql -u root -p < seiko-work-service/src/main/resources/db/schema.sql
 ```
 
-创建 5 张表：`work_user`（用户）、`work_mail`（邮箱授权配置）、`work_task`（工作事项）、`work_event`（日程事件）、`work_bill`（账单明细）。
+创建 6 张表：`work_user`（用户）、`work_mail`（邮箱授权配置）、`work_task`（工作事项）、`work_event`（日程事件）、`work_bill`（账单明细）、`work_savings_goal`（攒钱目标）。
 
 ### 2. 配置环境变量
 
@@ -95,6 +95,7 @@ npm run dev / build / lint
 | 账单 | `GET /api/bills/summary` | 任意周期汇总：收入 / 支出 / 结余 / 笔数 |
 | 账单 | `GET /api/bills/trend` | 趋势统计，`?period=DAY\|WEEK\|MONTH\|YEAR` |
 | 账单 | `GET /api/bills/category-stat` | 分类维度统计（含支出占比） |
+| 攒钱目标 | `GET /api/savings-goal`、`PUT /api/savings-goal` | 每月收入分配目标（一个用户一条配置，未配置时 `data` 为 `null`） |
 
 注意：`/auth/**` 无前缀，其余业务接口均为 `/api` 前缀；登录、注册、验证码接口公开，其余一律要求登录。
 
@@ -120,21 +121,36 @@ npm run dev / build / lint
 - 趋势统计用一条 SQL 承载：`CASE #{period} WHEN 'DAY'/'WEEK'/'MONTH'/'YEAR'` 生成 `periodLabel` / `periodStart` / `periodEnd` 再分组。`periodLabel` 的字典序与时间序一致（`2026-10-12` / `2026-10` / `2026`），可直接作为图表 X 轴。
 - 统计类查询（`SUM` / `GROUP BY`）无法用 Lambda Wrapper 表达，改用 Mapper 上的 `@Select` 注解承载，与项目"不写 XML Mapper"的约定一致。
 
+### 攒钱目标
+
+账单页左上角的「攒钱目标」按钮会弹出配置弹窗，把每月收入按比例分到若干档位，默认是**储蓄 70% / 日常开销 20% / 心愿 10%**。
+
+- 档位数量、名称都由用户自定义（1–10 个），`percent` 为整数百分比，服务端校验**各档合计必须等于 100**。
+- 每个档位可标记为「储蓄档」；**非储蓄档的金额合计就是本月可用预算**，弹窗里拿它和本月实际支出对比，直接给出「剩余 / 超支」。
+- 弹窗里的收入与支出取的是**本月**（自然月），与面板当前查看的周期无关——目标本身就是按月定的。
+- 存储上，一个用户一条记录（`work_savings_goal`，`uk_user_id`），档位用 **JSON 数组存在单列**里：档位只有几行、永远整组读写、也不会按档位做条件查询，拆子表只会徒增 join。读写时在 Service 层用 Jackson 与档位列表互转，JSON 解析失败按空列表处理，不让一条脏数据把接口打成 500。
+- 前端金额测算是实时计算的：改比例、改名称都会立刻重算，不必等保存。
+
 ### 相关文件
 
 ```
 后端
-  entity/Bill.java
-  dto/BillDTO.java
+  entity/Bill.java  SavingsGoal.java
+  dto/BillDTO.java  SavingsGoalDTO.java  SavingsBucketDTO.java
   vo/BillVO.java  BillSummaryVO.java  BillOverviewVO.java  BillTrendVO.java  BillCategoryStatVO.java
+  vo/SavingsGoalVO.java  SavingsBucketVO.java
   enums/BillTypeEnum.java  PaymentMethodEnum.java  BillStatPeriodEnum.java
-  mapper/BillMapper.java
+  mapper/BillMapper.java  SavingsGoalMapper.java
   service/BillService.java + service/impl/BillServiceImpl.java
-  controller/BillController.java
+  service/SavingsGoalService.java + service/impl/SavingsGoalServiceImpl.java
+  controller/BillController.java  SavingsGoalController.java
 
 前端
   lib/bill.ts               # 账单 API 封装与类型定义
-  components/BillPanel.tsx  # 记账面板
+  lib/savings.ts            # 攒钱目标 API 与默认档位
+  lib/date.ts               # 日期/金额格式化（账单相关组件共用）
+  components/BillPanel.tsx           # 记账面板
+  components/SavingsGoalDialog.tsx   # 攒钱目标弹窗
 ```
 
 ## 前端说明
@@ -159,4 +175,5 @@ npm run dev / build / lint
 - **周期窗口在前端计算**（`periodRange` / `trendWindow`），显式把 `startDate` / `endDate` 传给后端，不依赖后端默认值。趋势图的窗口是"以当前周期为终点往前推"（日看近 30 天、周看近 12 周、月看近 12 个月、年看近 5 年），保证翻到任意周期都有一段可比的历史。
 - 汇总卡片（支出/收入/结余/笔数）、收支双柱趋势图、支出分类占比条。**图表用 div 绘制，未引入图表库**。
 - 明细按日期分组（带"今天 / 昨天"标记与当日支出小计），分页用"加载更多"。
+- 左上角「攒钱目标」按钮弹出分配配置弹窗，见上一节的[攒钱目标](#攒钱目标)。
 - 日期解析一律手写 `parseDate`（`new Date(y, m-1, d)`），不用 `new Date("2026-10-12")`——后者按 UTC 解析，在东八区会差一天。
