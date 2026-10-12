@@ -1,6 +1,6 @@
 # Seiko Work
 
-面向个人的工作站：接收邮件、安排每日工作与日程。
+面向个人的工作站：接收邮件、安排每日工作与日程、记录每日收支。
 
 ## 技术栈
 
@@ -32,7 +32,7 @@ doc/                  # 项目文档
 mysql -u root -p < seiko-work-service/src/main/resources/db/schema.sql
 ```
 
-创建 4 张表：`work_user`（用户）、`work_mail`（邮箱授权配置）、`work_task`（工作事项）、`work_event`（日程事件）。
+创建 5 张表：`work_user`（用户）、`work_mail`（邮箱授权配置）、`work_task`（工作事项）、`work_event`（日程事件）、`work_bill`（账单明细）。
 
 ### 2. 配置环境变量
 
@@ -90,9 +90,73 @@ npm run dev / build / lint
 | 邮件 | `GET/POST /api/mails/account`、`GET /api/mails/account/providers` | 邮箱授权配置（自动识别服务商） |
 | 邮件 | `GET /api/mails`、`GET /api/mails/{uid}`、`POST /api/mails/{uid}/read` | IMAP 实时拉取列表 / 详情 / 标记已读 |
 | 节假日 | `GET /api/holidays/{year}` | 法定节假日（服务端代理第三方 API，Redis 缓存 3 天） |
+| 账单 | `GET/POST /api/bills`、`GET/PUT/DELETE /api/bills/{id}` | 账单明细 CRUD、分页筛选 |
+| 账单 | `GET /api/bills/overview` | 今日 / 本周 / 本月 / 本年四段汇总（一次拿全） |
+| 账单 | `GET /api/bills/summary` | 任意周期汇总：收入 / 支出 / 结余 / 笔数 |
+| 账单 | `GET /api/bills/trend` | 趋势统计，`?period=DAY\|WEEK\|MONTH\|YEAR` |
+| 账单 | `GET /api/bills/category-stat` | 分类维度统计（含支出占比） |
 
 注意：`/auth/**` 无前缀，其余业务接口均为 `/api` 前缀；登录、注册、验证码接口公开，其余一律要求登录。
 
+## 账单模块（记账）
+
+### 表设计
+
+单表 `work_bill`，一条记录 = 一笔消费/收入。`category` 为自由文本（不建分类字典表），前端提供常用分类快捷标签，同时允许手动输入。
+
+几个刻意的取舍：
+
+- **金额用 `DECIMAL(12,2)`，不用 FLOAT/DOUBLE**。浮点累加会出现 `0.1 + 0.2 = 0.30000000000000004`，账目上不可接受。
+- **金额恒为正数，收/支方向由 `type` 区分**（0-支出，1-收入），统计时用 `CASE WHEN` 换算正负。比"支出存负数"更直观，也避免漏加负号把统计正负搞反。
+- **日/周/月/年四种粒度全部落在 `bill_date` 一个字段上**，查询统一写成 `[起始日, 结束日次日)` 的半开区间，直接命中 `idx_user_date`。因此既不需要生成列，也不需要预聚合统计表——个人记账一年几千行，实时聚合结果永远与明细一致，还省掉了增删改时同步统计表的维护成本和对账风险。
+- **周口径按 ISO 标准：周一为一周第一天**。分组键取"该周的周一"（`DATE_SUB(bill_date, INTERVAL WEEKDAY(bill_date) DAY)`），而不是 `YEARWEEK()` 返回的 `202641` 这类数字，前端展示和排序都更省事。Java 侧对应 `today.with(DayOfWeek.MONDAY)`，两侧必须一致，否则"本周"会差一天。
+- 索引：`idx_user_date`（日/周/月/年主查询）、`idx_user_type_date`（收支分开统计）、`idx_user_category_date`。
+
+### 接口约定
+
+- **日期区间在 API 边界是闭区间**（`startDate` / `endDate` 均含当天），与前端筛选习惯一致；转成 SQL 用的半开区间由 Service 层内部完成。
+- **`type` 作为查询参数用 `Integer` 而不是枚举**：`@JsonValue` 只作用于 Jackson，查询参数走的是 Spring 的 `StringToEnumConverterFactory`（按枚举名匹配），传 `?type=0` 会转换失败。请求体（新增/修改）里仍然是枚举，Jackson 能正常按 `@JsonValue` 反序列化。
+- **金额校验放在 DTO 层**（`@DecimalMin("0.01")` + `@Digits(integer = 10, fraction = 2)`，与 `DECIMAL(12,2)` 对齐），沿用项目"无 CHECK 约束、校验在 Service/DTO"的风格。
+- 趋势统计用一条 SQL 承载：`CASE #{period} WHEN 'DAY'/'WEEK'/'MONTH'/'YEAR'` 生成 `periodLabel` / `periodStart` / `periodEnd` 再分组。`periodLabel` 的字典序与时间序一致（`2026-10-12` / `2026-10` / `2026`），可直接作为图表 X 轴。
+- 统计类查询（`SUM` / `GROUP BY`）无法用 Lambda Wrapper 表达，改用 Mapper 上的 `@Select` 注解承载，与项目"不写 XML Mapper"的约定一致。
+
+### 相关文件
+
+```
+后端
+  entity/Bill.java
+  dto/BillDTO.java
+  vo/BillVO.java  BillSummaryVO.java  BillOverviewVO.java  BillTrendVO.java  BillCategoryStatVO.java
+  enums/BillTypeEnum.java  PaymentMethodEnum.java  BillStatPeriodEnum.java
+  mapper/BillMapper.java
+  service/BillService.java + service/impl/BillServiceImpl.java
+  controller/BillController.java
+
+前端
+  lib/bill.ts               # 账单 API 封装与类型定义
+  components/BillPanel.tsx  # 记账面板
+```
+
 ## 前端说明
 
-单页应用，采用 **hash 路由**（非 Next.js 文件路由）：`#` 首页、`#mail` 邮箱、`#schedule` 日程、`#login` 登录。页面以 Panel 组件形式挂载在 `app/page.tsx`，导航入口在 `components/SideNav.tsx`。API 调用统一走 `lib/axios.ts`（自动附带 token、统一错误处理与登录过期跳转）。
+单页应用，采用 **hash 路由**（非 Next.js 文件路由）：`#` 首页、`#mail` 邮箱、`#schedule` 日程、`#bill` 记账、`#login` 登录。页面以 Panel 组件形式挂载在 `app/page.tsx`，导航入口在 `components/SideNav.tsx`。API 调用统一走 `lib/axios.ts`（自动附带 token、统一错误处理与登录过期跳转）。
+
+### 邮件详情正文渲染
+
+邮件正文来自外部发件人，属于不可信内容，**任何以 HTML 形式渲染前都必须先清洗**。`lib/mailHtml.ts` 负责这件事：
+
+- `sanitizeEmailHtml()`：用 `DOMParser` 解析后移除 `script` / `style` / `iframe` / `form` 等标签、HTML 注释、`on*` 事件属性、`srcdoc` / `formaction`；对 `href` / `src` 做协议白名单（拦截 `javascript:` / `vbscript:` / `file:`，`data:` 仅放行 `data:image/`）；所有 `<a>` 强制加 `target="_blank" rel="noopener noreferrer nofollow"`，使正文里的链接可以在新标签页打开。
+- `textToHtml()`：纯文本正文路径，先解码 HTML 实体再转义（顺序不能反），自动识别裸链接，换行转 `<br>`。
+- `buildMailBodyHtml()`：优先用 HTML 正文，清洗后若为空（例如整封都是 script/style）自动回退纯文本。
+
+配套样式在 `app/globals.css` 的 `.mail-html` 下：约束图片/表格宽度避免撑破面板，深色主题下强制正文 `color: inherit` 并让背景透明，防止邮件自带的黑字白底在深色面板里变成不可读。
+
+### 记账面板
+
+`components/BillPanel.tsx`，左侧统计 + 右侧明细：
+
+- 周期在 `日 / 周 / 月 / 年` 之间切换，可前后翻页或跳回今天。
+- **周期窗口在前端计算**（`periodRange` / `trendWindow`），显式把 `startDate` / `endDate` 传给后端，不依赖后端默认值。趋势图的窗口是"以当前周期为终点往前推"（日看近 30 天、周看近 12 周、月看近 12 个月、年看近 5 年），保证翻到任意周期都有一段可比的历史。
+- 汇总卡片（支出/收入/结余/笔数）、收支双柱趋势图、支出分类占比条。**图表用 div 绘制，未引入图表库**。
+- 明细按日期分组（带"今天 / 昨天"标记与当日支出小计），分页用"加载更多"。
+- 日期解析一律手写 `parseDate`（`new Date(y, m-1, d)`），不用 `new Date("2026-10-12")`——后者按 UTC 解析，在东八区会差一天。
