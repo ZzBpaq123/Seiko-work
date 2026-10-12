@@ -11,6 +11,7 @@ import {
   markMailRead,
   type MailMessage,
 } from "@/lib/mail";
+import { buildMailBodyHtml } from "@/lib/mailHtml";
 import { toast } from "@/lib/toast";
 
 function formatTime(value: string | null) {
@@ -27,22 +28,6 @@ function formatTime(value: string | null) {
   if (sameDay(date, yesterday)) return `昨天 ${hhmm}`;
   if (date.getFullYear() === now.getFullYear()) return `${date.getMonth() + 1}月${date.getDate()}日`;
   return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
-}
-
-function htmlToText(html: string) {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|li|tr|h[1-6])>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .trim();
 }
 
 function failMessage(e: unknown, fallback: string) {
@@ -107,12 +92,10 @@ export function MailPanel() {
   };
 
   const displayDetail = detail ?? null;
-  const paragraphs = useMemo(() => {
-    if (!displayDetail) return [];
-    const text =
-      displayDetail.contentText ??
-      (displayDetail.contentHtml ? htmlToText(displayDetail.contentHtml) : "");
-    return text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  // 正文优先按 HTML 渲染（链接可点击、实体自动解码），纯文本则转义后再渲染
+  const bodyHtml = useMemo(() => {
+    if (!displayDetail) return "";
+    return buildMailBodyHtml(displayDetail.contentHtml, displayDetail.contentText);
   }, [displayDetail]);
 
   return (
@@ -254,12 +237,12 @@ export function MailPanel() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              {paragraphs.length > 0 ? (
-                paragraphs.map((paragraph, i) => (
-                  <p key={i} className="mb-3 text-sm leading-7 text-neutral-700 dark:text-neutral-300">
-                    {paragraph}
-                  </p>
-                ))
+              {bodyHtml ? (
+                <div
+                  className="mail-html text-sm text-neutral-700 dark:text-neutral-300"
+                  // 正文已由 buildMailBodyHtml 清洗（去脚本/事件属性/javascript: 协议），链接统一新标签页打开
+                  dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                />
               ) : (
                 <p className="text-sm text-neutral-400 dark:text-neutral-500">（无正文内容）</p>
               )}

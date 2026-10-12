@@ -142,3 +142,57 @@ canvas {
     display: none;
   }
 }
+
+/* 邮件正文（HTML 渲染）：约束图片/表格宽度，统一链接与引用样式，避免撑破详情面板 */
+.mail-html {
+  font-size: 14px;
+  line-height: 1.75;
+  color: inherit;
+  overflow-wrap: break-word;
+}
+
+.mail-html img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.mail-html table {
+  max-width: 100% !important;
+}
+
+/* 链接颜色加 !important：邮件常带内联 color，需保证在明暗两种主题下都可辨识 */
+.mail-html a {
+  color: #0284c7 !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.mail-html a:hover {
+  color: #0369a1 !important;
+}
+
+.dark .mail-html a {
+  color: #38bdf8 !important;
+}
+
+.dark .mail-html a:hover {
+  color: #7dd3fc !important;
+}
+
+.mail-html blockquote {
+  margin: 8px 0;
+  border-left: 3px solid rgba(23, 23, 23, 0.15);
+  padding-left: 12px;
+  color: #525252;
+}
+
+.dark .mail-html blockquote {
+  border-left-color: rgba(255, 255, 255, 0.2);
+  color: #a3a3a3;
+}
+
+/* 深色主题：邮件自带黑字/白底会与深色面板冲突导致不可读，统一改为跟随主题色 */
+.dark .mail-html :where(p, div, span, td, th, li, h1, h2, h3, h4, h5, h6, strong, em, b, i, u, small, font) {
+  color: inherit !important;
+  background-color: transparent !important;
+}
