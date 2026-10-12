@@ -75,3 +75,40 @@ CREATE TABLE IF NOT EXISTS `work_event` (
     `delete_time`     DATETIME     DEFAULT NULL COMMENT '删除时间',
     KEY `idx_user_start_time` (`user_id`, `start_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日程事件表';
+
+-- ============================================================================
+-- 账单记录（记账）模块
+-- 需求：记录每天的消费情况，并支持按「日 / 周 / 月 / 年」统计
+--
+-- 设计要点：
+--   1. 金额用 DECIMAL(12,2)，绝不用 FLOAT/DOUBLE——浮点累加会出现
+--      0.1 + 0.2 = 0.30000000000000004 这类误差，账目上不可接受。
+--   2. 金额恒为正数，收/支方向由 type 区分，统计时用 CASE WHEN 换算。
+--      比「支出存负数」更直观，也避免漏加负号导致统计正负颠倒。
+--   3. 日/周/月/年四种粒度的统计全部落在 bill_date 这一个字段上：
+--      查询统一写成 [起始日, 结束日次日) 的日期区间，直接命中 idx_user_date，
+--      因此既不需要生成列（generated column），也不需要预聚合统计表。
+--      个人记账一年也就几千行，实时聚合结果永远准确、且零维护成本；
+--      预聚合表反而要在增删改时同步，容易产生对不上账的数据。
+--   4. 沿用现有约定：逻辑删除（is_deleted + delete_time）、无物理外键、
+--      枚举用 TINYINT 由 MyBatis-Plus 映射。
+-- ============================================================================
+
+-- 账单明细表（一条记录 = 一笔消费/收入）
+CREATE TABLE IF NOT EXISTS `work_bill` (
+    `id`             BIGINT        AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    `user_id`        BIGINT        NOT NULL COMMENT '用户ID',
+    `category`       VARCHAR(255)  DEFAULT NULL COMMENT '分类',
+    `type`           TINYINT       NOT NULL DEFAULT 0 COMMENT '账单类型：0-支出，1-收入',
+    `amount`         DECIMAL(12,2) NOT NULL COMMENT '金额（元），恒为正数，收支方向由 type 决定',
+    `bill_date`      DATE          NOT NULL COMMENT '账单日期（日/周/月/年统计均基于该字段）',
+    `payment_method` TINYINT       NOT NULL DEFAULT 0 COMMENT '支付方式：0-其他，1-现金，2-微信，3-支付宝，4-储蓄卡，5-信用卡',
+    `remark`         VARCHAR(255)  DEFAULT NULL COMMENT '备注',
+    `create_time`    DATETIME      DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`    DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `is_deleted`     TINYINT       NOT NULL DEFAULT 0 COMMENT '逻辑删除标志：0-未删除，1-已删除',
+    `delete_time`    DATETIME      DEFAULT NULL COMMENT '删除时间',
+    KEY `idx_user_date` (`user_id`, `bill_date`),
+    KEY `idx_user_type_date` (`user_id`, `type`, `bill_date`),
+    KEY `idx_user_category_date` (`user_id`, `bill_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账单明细表';
