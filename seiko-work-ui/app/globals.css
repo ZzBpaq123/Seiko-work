@@ -42,11 +42,19 @@ body {
 }
 
 /* 主题切换动画：关闭默认交叉淡入淡出，改由 ThemeToggle 以 clip-path 圆形
-   揭示动画驱动（深色→浅色从按钮展开，浅色→深色收缩到按钮） */
+   揭示动画驱动（深色→浅色从按钮展开，浅色→深色收缩到按钮）。
+   两张快照都不跑 CSS 动画，真正的动画由 JS 在过渡 ready 后挂上去。 */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+/* 收缩方向（切到深色）时，上层的"新"（深色）快照会盖住下层的"旧"（浅色）快照，
+   必须把它整段压透明才能看到收缩。用 CSS 变量控制：ThemeToggle 在过渡期间把它设为 0。
+   变量写在 <html> 上，视图过渡伪元素树挂在根元素下会继承到，因此这里能读到。 */
+::view-transition-new(root) {
+  opacity: var(--vt-new-opacity, 1);
 }
 
 canvas {
