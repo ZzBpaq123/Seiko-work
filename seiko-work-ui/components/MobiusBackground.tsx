@@ -17,31 +17,69 @@ import {OrbitControls} from "@react-three/drei";
 import {useTheme} from "next-themes";
 import * as THREE from "three";
 import gsap from "gsap";
+import {useHash} from "@/hooks/useHash";
 
 // ---------- 全局视觉常量 ----------
 // 按主题区分的一套配色（浅色：纸雕米白底 + 深灰线框 + 黑点；深色：近黑底 + 浅灰线框 + 白点）
+//
+// 莫比乌斯环按"当前页面"分两档配色：
+//   home    —— 首页：环是主视觉，保持原有对比度（不变）
+//   content —— 其他页面（叠了内容面板）：降低环与背景的对比度，让它"退到背景里"不抢内容。
+//              浅色主题把线框调浅、深色主题把环压暗，两者都是"变淡"。
 const THEME_COLORS = {
     light: {
-        // 背景清屏色（画布底色）
+        // 背景清屏色（画布底色）：首页/内容页共用，避免切换页面时底色跳变
         background: "#FAFAF7",
-        // 莫比乌斯带表面的填充色（接近背景色，形成低对比的"纸雕"感）
-        surface: "#FAFAF7",
-        // 线框颜色（中灰，勾勒莫比乌斯带轮廓）
-        wireframe: "#727478",
-        // 粒子点颜色（RGB 向量，供着色器 uniform 使用）
+        // 粒子点颜色（RGB 向量，供着色器 uniform 使用）：只随主题，与页面无关
         dot: [0.0, 0.0, 0.0],
+        home: {
+            // 莫比乌斯带表面的填充色（接近背景色，形成低对比的"纸雕"感）
+            surface: "#FAFAF7",
+            // 线框颜色（中灰，勾勒莫比乌斯带轮廓）
+            wireframe: "#727478",
+        },
+        content: {
+            // 表面更贴近背景、线框由中灰调浅为浅灰，整体对比度下降
+            surface: "#FBFAF7",
+            wireframe: "#B9BABE",
+        },
     },
     dark: {
         background: "#0a0a0a",
-        surface: "#1a1a1a",
-        wireframe: "#8b8b8b",
         dot: [1.0, 1.0, 1.0],
+        home: {
+            surface: "#1a1a1a",
+            wireframe: "#8b8b8b",
+        },
+        content: {
+            // 深色主题下"变浅"= 降低对比度：环压暗、更贴近近黑底色
+            surface: "#131313",
+            wireframe: "#4a4a4a",
+        },
     },
 } as const;
 
-function useThemePalette() {
+type ThemeKey = keyof typeof THEME_COLORS;
+
+// 当前生效主题（next-themes 的 resolvedTheme，system 时取系统实际值）
+function useThemeKey(): ThemeKey {
     const {resolvedTheme} = useTheme();
-    return THEME_COLORS[resolvedTheme === "dark" ? "dark" : "light"];
+    return resolvedTheme === "dark" ? "dark" : "light";
+}
+
+// 莫比乌斯环配色：首页用 home，其余页面（hash 非空）用 content（对比度更低）。
+// 返回的是常量对象引用，可直接作为 useMemo / useEffect 的依赖。
+function useRingPalette() {
+    const theme = useThemeKey();
+    const hash = useHash();
+    // hash 为空或仅 "#" 表示首页
+    const isHome = !hash || hash === "#";
+    return THEME_COLORS[theme][isHome ? "home" : "content"];
+}
+
+// 背景星点颜色：只随主题变化，与当前页面无关
+function useDotColor() {
+    return THEME_COLORS[useThemeKey()].dot;
 }
 
 // ---------- 莫比乌斯带几何参数 ----------
@@ -366,8 +404,8 @@ function DotField({
 }) {
     // gl：Three.js 渲染器实例，用于获取像素比（适配高 DPI 屏）
     const {gl} = useThree();
-    // 主题色板（随 next-themes 的 resolvedTheme 变化）
-    const palette = useThemePalette();
+    // 星点颜色（只随主题变化，与当前页面无关）
+    const dotColor = useDotColor();
     // groupRef：包裹所有粒子的容器组，便于整体缩放 / 旋转
     const groupRef = useRef<THREE.Group>(null);
     // ownAngle：记录粒子组自身的累计旋转角（绕 Z 轴）
@@ -384,12 +422,12 @@ function DotField({
                     uPixelRatio: {value: gl.getPixelRatio()}, // 设备像素比
                     uFadeStart: {value: 18.0}, // 近处渐隐起始阈值
                     uFadeEnd: {value: 32.0}, // 近处渐隐结束阈值
-                    uColor: {value: new THREE.Vector3(...palette.dot)}, // 点颜色（随主题）
+                    uColor: {value: new THREE.Vector3(...dotColor)}, // 点颜色（随主题）
                 },
                 vertexShader: DOT_VERTEX_SHADER,
                 fragmentShader: DOT_FRAGMENT_SHADER,
             }),
-        [gl, palette]
+        [gl, dotColor]
     );
 
     // 监听像素比变化（如跨屏拖动窗口 / 缩放），实时更新 uniform
@@ -448,8 +486,10 @@ function DotField({
 function MobiusScene() {
     // gl：渲染器实例，用于设置清屏色
     const {gl} = useThree();
-    // 主题色板（随 next-themes 的 resolvedTheme 变化）
-    const palette = useThemePalette();
+    // 当前主题（用于取画布清屏色）
+    const theme = useThemeKey();
+    // 莫比乌斯环配色：首页保持原样，其他页面自动"变淡"
+    const palette = useRingPalette();
     // groupRef：莫比乌斯带所在的分组，用于缩放与旋转
     const groupRef = useRef<THREE.Group>(null);
 
@@ -459,10 +499,10 @@ function MobiusScene() {
     const backgroundDotGeometry = useMemo(() => createBackgroundDotGeometry(), []);
     const accentDotGeometry = useMemo(() => createAccentDotGeometry(), []);
 
-    // 把画布清屏色设为当前主题的背景色
+    // 把画布清屏色设为当前主题的背景色（首页/内容页一致）
     useEffect(() => {
-        gl.setClearColor(palette.background);
-    }, [gl, palette]);
+        gl.setClearColor(THEME_COLORS[theme].background);
+    }, [gl, theme]);
 
     // 入场动画：整组从极小缩放到正常大小
     useEffect(() => {
