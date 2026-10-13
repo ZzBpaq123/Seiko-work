@@ -17,23 +17,72 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (callback: () => void) => ViewTransitionLike;
 };
 
-// 动画时长（毫秒）
+type ThemeName = "light" | "dark";
+
+// 圆形展开动画时长（毫秒）
 const DURATION = 450;
+
+// 挂在 <html> 上的标记类：只有浏览器真正支持「给伪元素挂动画」时才加。
+// globals.css 里 .vt-clip::view-transition-*(root) 才会关掉默认的交叉淡入淡出，
+// 改由下面 JS 挂的 clip-path 圆形展开动画驱动。
+// 不支持的浏览器（会忽略 animate 的 pseudoElement 选项）就不加这个类，
+// 让它们退回到默认的交叉淡入淡出——总好过把 clip-path 误作用到 <html> 上。
+const VT_CLIP_CLASS = "vt-clip";
+
+/**
+ * 探测 Element.animate 是否真的支持 pseudoElement 选项。
+ * 支持的浏览器里动画的 effect.pseudoElement 会等于传入的伪元素字符串；
+ * 不支持的浏览器会忽略该选项（pseudoElement 为空），此时动画会落到 <html> 本身，
+ * 必须放弃这条路径。
+ */
+function supportsPseudoElementAnimation(): boolean {
+  if (typeof document === "undefined") return false;
+  try {
+    const probe = document.documentElement.animate(
+      { opacity: [1, 1] },
+      { duration: 0, pseudoElement: "::view-transition-new(root)" }
+    );
+    // pseudoElement 声明在 KeyframeEffect 上，而不是 AnimationEffect 基类
+    const ok = !!(probe.effect as KeyframeEffect | null)?.pseudoElement;
+    probe.cancel();
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  // 当前正在进行的视图过渡：用来处理"上一次还没播完就又点了一次"
+  // 当前正在进行的视图过渡：用来处理「上一次还没播完就又点了一次」
   const transitionRef = useRef<ViewTransitionLike | null>(null);
+  // 上一次「命令」的目标主题。
+  // 不能直接用 resolvedTheme：它来自 next-themes 的 state，过渡播放期间可能还没刷新，
+  // 会导致连点两次时第二次算出的目标主题和第一次相同、被静默吞掉（表现为「点了没反应」）。
+  const commandedThemeRef = useRef<ThemeName | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    // 只在支持伪元素动画时才关掉默认的交叉淡入淡出
+    if (supportsPseudoElementAnimation()) {
+      document.documentElement.classList.add(VT_CLIP_CLASS);
+    }
     return () => {
       // 卸载时把可能还在跑的过渡结束掉，避免残留动画影响下次挂载
       transitionRef.current?.skipTransition?.();
       transitionRef.current = null;
+      document.documentElement.classList.remove(VT_CLIP_CLASS);
     };
   }, []);
+
+  // 外部来源（系统主题变化、其它组件调用 setTheme）改动时同步「命令目标」；
+  // 但过渡播放期间 resolvedTheme 可能滞后，此时不要覆盖我们刚下达的命令。
+  useEffect(() => {
+    if (transitionRef.current) return;
+    if (resolvedTheme === "light" || resolvedTheme === "dark") {
+      commandedThemeRef.current = resolvedTheme;
+    }
+  }, [resolvedTheme]);
 
   if (!mounted) {
     return (
@@ -51,15 +100,21 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   const isDark = resolvedTheme === "dark";
 
-  // 深色→浅色：浅色圆形从按钮处展开到屏幕最远端（动画作用在新快照上）
-  // 浅色→深色：浅色圆形从最远端收缩到按钮处（动画作用在旧快照上）
-  // 两个方向都是"浅色在动"，所以下面按方向决定动画挂在哪张快照上。
+  // 两个方向都是「新主题从按钮处呈圆形展开」：
+  // 深色 -> 浅色是浅色展开，浅色 -> 深色是深色展开，圆心始终是按钮中心。
+  // 实现上只动画 ::view-transition-new(root)（它盖在旧快照之上），
+  // 所以不需要再去压透明任何一张快照——少一个会残留、会失效的环节。
   const toggleTheme = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const nextTheme = isDark ? "light" : "dark";
-    const doc = document as ViewTransitionDocument;
     const root = document.documentElement;
+    const doc = document as ViewTransitionDocument;
 
-    // 浏览器不支持 View Transition，或用户开了"减少动态效果" → 直接切换，不做动画
+    // 以「上一次命令」为准推算下一个主题，保证连点一定在明暗之间来回切
+    const current: ThemeName =
+      commandedThemeRef.current ?? (isDark ? "dark" : "light");
+    const nextTheme: ThemeName = current === "dark" ? "light" : "dark";
+    commandedThemeRef.current = nextTheme;
+
+    // 浏览器不支持 View Transition，或用户开了「减少动态效果」→ 直接切换，不做动画
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -69,8 +124,8 @@ export function ThemeToggle({ className }: { className?: string }) {
     }
 
     // 上一次过渡还在跑就再次点击：先主动结束它。
-    // 否则浏览器会"跳过"旧过渡，旧过渡的 ready 被 reject、动画中途消失，
-    // 表现就是"有时有动画、有时没有"。
+    // 否则浏览器会「跳过」旧过渡，旧过渡的 ready 被 reject、动画中途消失，
+    // 表现就是「有时有动画、有时没有」。
     transitionRef.current?.skipTransition?.();
     transitionRef.current = null;
 
@@ -84,14 +139,6 @@ export function ThemeToggle({ className }: { className?: string }) {
       Math.max(y, window.innerHeight - y)
     );
 
-    const toDark = nextTheme === "dark";
-
-    // 收缩方向：上层是"新"（深色）快照，必须把它整段压透明，
-    // 才能露出下层"旧"的浅色快照、看到收缩效果。
-    // 这里用静态样式（CSS 变量）而不是第二段 JS 动画——少一个可能失效的环节，
-    // 只要过渡能跑起来，透明就是一定生效的。
-    if (toDark) root.style.setProperty("--vt-new-opacity", "0");
-
     const transition = doc.startViewTransition(() => {
       flushSync(() => setTheme(nextTheme));
     });
@@ -99,41 +146,39 @@ export function ThemeToggle({ className }: { className?: string }) {
 
     // 本次过渡挂上去的动画。过渡结束后必须显式 cancel()：
     // fill:"forwards" 的动画不会随伪元素销毁而释放，会残留下来继续作用在
-    // 下一次过渡的伪元素上。旧实现正是被上一次残留的 `opacity: [0,0]` 动画
-    // 把"新"快照一直压成透明，导致反方向切换时整个动画看不见。
+    // 下一次过渡的伪元素上（历史上正是残留动画把后续过渡整个压没了）。
     let animation: Animation | null = null;
 
     const cleanup = () => {
-      // 已经被后续过渡接管时不要动全局状态，否则会把新过渡的变量/动画清掉
-      if (transitionRef.current !== transition) return;
+      // 动画无条件 cancel：即使本次过渡被后续过渡接管，它对应的伪元素已经销毁，
+      // 残留的 forwards 动画只会污染下一次过渡，必须清掉。
       animation?.cancel();
       animation = null;
-      root.style.removeProperty("--vt-new-opacity");
-      transitionRef.current = null;
+      // 但「当前过渡」的引用只有在没被接管时才能清空
+      if (transitionRef.current === transition) transitionRef.current = null;
     };
     // finished 在过渡被跳过时会 reject，成功/失败都要清理
     transition.finished.then(cleanup, cleanup);
 
     transition.ready
       .then(() => {
-        const target = toDark
-          ? "::view-transition-old(root)"
-          : "::view-transition-new(root)";
-        const from = `circle(${toDark ? radius : 0}px at ${x}px ${y}px)`;
-        const to = `circle(${toDark ? 0 : radius}px at ${x}px ${y}px)`;
-
         animation = root.animate(
-          { clipPath: [from, to] },
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${radius}px at ${x}px ${y}px)`,
+            ],
+          },
           {
             duration: DURATION,
             easing: "ease-in-out",
             fill: "forwards",
-            pseudoElement: target,
+            pseudoElement: "::view-transition-new(root)",
           }
         );
       })
       .catch(() => {
-        // 过渡被跳过（例如连续快速点击）时 ready 会 reject：
+        // 过渡被跳过（例如连续快速点击、页面不可见）时 ready 会 reject：
         // 主题已经切好了，只是这次没播动画，无需额外处理。
       });
   };

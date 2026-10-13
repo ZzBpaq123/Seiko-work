@@ -42,19 +42,27 @@ body {
 }
 
 /* 主题切换动画：关闭默认交叉淡入淡出，改由 ThemeToggle 以 clip-path 圆形
-   揭示动画驱动（深色→浅色从按钮展开，浅色→深色收缩到按钮）。
-   两张快照都不跑 CSS 动画，真正的动画由 JS 在过渡 ready 后挂上去。 */
-::view-transition-old(root),
-::view-transition-new(root) {
+   揭示动画驱动——两个方向都是「新主题从按钮处展开」。
+   两张快照都不跑 CSS 动画，真正的动画由 JS 在过渡 ready 后挂到
+   ::view-transition-new(root) 上（见 ThemeToggle 的 clipPath 动画）。
+
+   整个规则由 .vt-clip 兜底：这个类只在浏览器确实支持「给伪元素挂动画」
+   （Element.animate 的 pseudoElement 选项）时才由 ThemeToggle 加上。
+   不支持的浏览器会忽略该选项，把 clip-path 误作用到 <html> 本身——
+   那样在「深色→浅色」时会变成浅色圆盘铺在白底上，看起来完全没有展开动画。
+   这类浏览器不加 .vt-clip，直接沿用浏览器默认的交叉淡入淡出。 */
+.vt-clip::view-transition-old(root),
+.vt-clip::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-/* 收缩方向（切到深色）时，上层的"新"（深色）快照会盖住下层的"旧"（浅色）快照，
-   必须把它整段压透明才能看到收缩。用 CSS 变量控制：ThemeToggle 在过渡期间把它设为 0。
-   变量写在 <html> 上，视图过渡伪元素树挂在根元素下会继承到，因此这里能读到。 */
-::view-transition-new(root) {
-  opacity: var(--vt-new-opacity, 1);
+/* 过渡期间伪元素树是一层铺满视口的浮层。理论上它会参与命中测试、把点击吃掉，
+   所以这里显式声明不接收指针事件。
+   注意：实测 Chrome 目前的命中测试并不遵守这条（过渡播放中点击仍会落到 <html>），
+   属于引擎行为，无法用 CSS 绕过；保留该声明是为了让遵守规范的实现能正常工作。 */
+::view-transition {
+  pointer-events: none;
 }
 
 canvas {
