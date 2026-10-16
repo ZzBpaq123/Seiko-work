@@ -2,7 +2,10 @@ package com.seiko.work.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -29,5 +32,14 @@ public class SavingsGoalDTO implements Serializable {
     @Valid
     @Schema(description = "分配档位列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<SavingsBucketDTO> buckets;
+
+    /**
+     * 必填：没有「未配置」这一档，前端默认填 1 号（1 号的周期与自然月等价）。
+     */
+    @NotNull(message = "发薪日不能为空")
+    @Min(value = 1, message = "发薪日必须在 1-31 之间")
+    @Max(value = 31, message = "发薪日必须在 1-31 之间")
+    @Schema(description = "每月发薪日期(1-31)，必填", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer salaryDay;
 
 }

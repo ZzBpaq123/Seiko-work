@@ -8,7 +8,10 @@ import { fmtAmount, fmtDate } from "@/lib/date";
 import {
   DEFAULT_BUCKETS,
   DEFAULT_GOAL_NAME,
+  DEFAULT_SALARY_DAY,
   getSavingsGoal,
+  parseSalaryDay,
+  salaryCycleRange,
   saveSavingsGoal,
   type SavingsBucket,
 } from "@/lib/savings";
@@ -29,6 +32,15 @@ function parsePercent(raw: string) {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+/** 发薪日草稿同样是字符串：空串 = 还没填（非法），失焦时会被补回默认的 1 号 */
+function toSalaryDayDraft(day: number | null | undefined) {
+  return day ? String(day) : "";
+}
+
+function fmtMonthDay(d: Date) {
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
 function failMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
 }
@@ -36,36 +48,38 @@ function failMessage(e: unknown, fallback: string) {
 export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState(DEFAULT_GOAL_NAME);
   const [buckets, setBuckets] = useState<BucketDraft[]>(() => DEFAULT_BUCKETS.map(toDraft));
+  // 发薪日必填，默认 1 号（1 号的周期与自然月等价），用户只能改成别的 1-31 的日期
+  const [salaryDayText, setSalaryDayText] = useState(String(DEFAULT_SALARY_DAY));
   const [monthIncome, setMonthIncome] = useState(0);
   const [monthExpense, setMonthExpense] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [goalLoaded, setGoalLoaded] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 弹窗只关心「本月」：目标本身就是按每月收入定的，与面板当前查看的周期无关
+  // 先取配置：收支口径取决于里面的发薪日，所以统计只能等它回来再发
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const now = new Date();
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       try {
-        const [goal, summary] = await Promise.all([
-          getSavingsGoal(),
-          getBillSummary(fmtDate(firstOfMonth), fmtDate(now)),
-        ]);
+        const goal = await getSavingsGoal();
         if (cancelled) return;
         if (goal) {
           setName(goal.name || DEFAULT_GOAL_NAME);
           if (goal.buckets?.length) {
             setBuckets(goal.buckets.map(toDraft));
           }
+          // 老数据里发薪日是 NULL（当时默认自然月），这里同样回落到默认值
+          setSalaryDayText(toSalaryDayDraft(goal.salaryDay ?? DEFAULT_SALARY_DAY));
         }
-        setMonthIncome(summary.income);
-        setMonthExpense(summary.expense);
       } catch (err) {
         if (!cancelled) setError(failMessage(err, "加载攒钱目标失败"));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setGoalLoaded(true);
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -73,13 +87,48 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
+  const salaryDay = useMemo(() => parseSalaryDay(salaryDayText), [salaryDayText]);
+  // 空串会被解析成 null，所以「非法」本身就涵盖了「为空」这一种情况。
+  // 非法时只标红边框 + 禁用保存，不在弹窗里写任何错误文案。
+  const salaryDayInvalid = salaryDay === null;
+  // 与面板当前查看的周期无关：目标本身就是按「每月」定的
+  const cycle = useMemo(() => salaryCycleRange(salaryDay), [salaryDay]);
+
+  // 收支按发薪周期统计；改发薪日会重取，输入过程略作防抖
+  useEffect(() => {
+    if (!goalLoaded) return;
+    let cancelled = false;
+    setStatsLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const summary = await getBillSummary(fmtDate(cycle.start), fmtDate(cycle.end));
+        if (cancelled) return;
+        setMonthIncome(summary.income);
+        setMonthExpense(summary.expense);
+      } catch (err) {
+        if (!cancelled) setError(failMessage(err, "加载收支汇总失败"));
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [goalLoaded, cycle]);
+
+  const periodWord = cycle.isSalaryCycle ? "本发薪周期" : "本月";
+  const periodRange = cycle.isSalaryCycle
+    ? `${fmtMonthDay(cycle.start)} 至今`
+    : "本月 1 日至今";
+
   const totalPercent = useMemo(
     () => buckets.reduce((sum, b) => sum + parsePercent(b.percent), 0),
     [buckets]
   );
   const nameValid = buckets.length > 0 && buckets.every((b) => b.name.trim().length > 0);
   const percentValid = totalPercent === 100;
-  const canSave = nameValid && percentValid;
+  const canSave = nameValid && percentValid && salaryDay !== null;
 
   const allocations = useMemo(
     () =>
@@ -113,6 +162,7 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
   const resetDefaults = () => {
     setName(DEFAULT_GOAL_NAME);
     setBuckets(DEFAULT_BUCKETS.map(toDraft));
+    setSalaryDayText(String(DEFAULT_SALARY_DAY));
     setError(null);
   };
 
@@ -125,6 +175,10 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
       setError(`各档位比例合计必须为 100%，当前为 ${totalPercent}%`);
       return;
     }
+    if (salaryDayInvalid) {
+      // 保存按钮本来就是禁用的，这里静默兜底，不再往弹窗里写提示
+      return;
+    }
     setError(null);
     setSaving(true);
     try {
@@ -135,6 +189,8 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
           percent: parsePercent(b.percent),
           saving: b.saving,
         })),
+        // 空串会被解析成 null，服务端据此清空发薪日配置
+        salaryDay,
       });
       toast.success("攒钱目标已保存");
       onClose();
@@ -161,7 +217,7 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
               攒钱目标
             </h3>
             <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-              把每月收入按比例分配，非储蓄档的合计就是本月可用预算
+              把每月收入按比例分配，非储蓄档的合计就是本周期的可用预算
             </p>
           </div>
           <button
@@ -179,7 +235,7 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
             正在加载…
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="flex-1 overflow-y-auto px-5 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -187,13 +243,67 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
               className="w-full rounded-lg border border-neutral-900/15 dark:border-white/15 bg-white/80 dark:bg-neutral-800/60 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-neutral-900 dark:focus:border-white"
             />
 
+            {/* 发薪日：决定下面收入/支出按哪个周期统计 */}
+            <div className="mt-3 rounded-lg border border-neutral-900/10 bg-white/40 px-3 py-2 dark:border-white/10 dark:bg-white/5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <label
+                    htmlFor="salary-day"
+                    className="text-xs text-neutral-700 dark:text-neutral-300"
+                  >
+                    发薪日
+                    <span className="ml-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+                      必填
+                    </span>
+                  </label>
+                  <p className="mt-0.5 text-[11px] leading-4 text-neutral-400 dark:text-neutral-500">
+                    按「{periodRange}」统计收支
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500">每月</span>
+                  <input
+                    id="salary-day"
+                    value={salaryDayText}
+                    onChange={(e) => setSalaryDayText(e.target.value)}
+                    onBlur={() =>
+                      setSalaryDayText(
+                        salaryDay ? String(salaryDay) : String(DEFAULT_SALARY_DAY)
+                      )
+                    }
+                    type="number"
+                    min={1}
+                    max={31}
+                    step={1}
+                    placeholder={String(DEFAULT_SALARY_DAY)}
+                    className={cn(
+                      "w-16 rounded-lg border bg-white/80 px-2 py-1.5 text-right text-sm tabular-nums text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-900 dark:bg-neutral-800/60 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-white",
+                      salaryDayInvalid
+                        ? "border-red-500 dark:border-red-500"
+                        : "border-neutral-900/15 dark:border-white/15"
+                    )}
+                  />
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500">日</span>
+                </div>
+              </div>
+            </div>
+
             <div className="mt-4 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-              <span>
-                本月收入 <span className="tabular-nums text-neutral-900 dark:text-neutral-100">¥{fmtAmount(monthIncome)}</span>
-              </span>
-              <span>
-                本月支出 <span className="tabular-nums text-neutral-900 dark:text-neutral-100">¥{fmtAmount(monthExpense)}</span>
-              </span>
+              {statsLoading ? (
+                <span className="flex items-center gap-1.5 text-neutral-400 dark:text-neutral-500">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  正在统计{periodWord}收支…
+                </span>
+              ) : (
+                <>
+                  <span>
+                    {periodWord}收入 <span className="tabular-nums text-neutral-900 dark:text-neutral-100">¥{fmtAmount(monthIncome)}</span>
+                  </span>
+                  <span>
+                    {periodWord}支出 <span className="tabular-nums text-neutral-900 dark:text-neutral-100">¥{fmtAmount(monthExpense)}</span>
+                  </span>
+                </>
+              )}
             </div>
 
             {/* 档位编辑 */}
@@ -219,7 +329,7 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
                     <span className="text-xs text-neutral-400 dark:text-neutral-500">%</span>
                   </div>
                   <label
-                    title="标记为储蓄档：不计入本月可用预算"
+                    title="标记为储蓄档：不计入本周期可用预算"
                     className="flex shrink-0 cursor-pointer items-center gap-1 text-[11px] text-neutral-500 dark:text-neutral-400"
                   >
                     <input
@@ -260,12 +370,26 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
               </span>
             </div>
 
-            {/* 按本月收入测算 */}
+            {/* 按周期收入测算 */}
             <div className="mt-4 rounded-xl border border-neutral-900/10 dark:border-white/10 bg-white/40 px-3 py-3 dark:bg-white/5">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">按本月收入测算</p>
-              {monthIncome <= 0 ? (
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  按{periodWord}收入测算
+                </p>
+                {cycle.isSalaryCycle && (
+                  <p className="shrink-0 text-[11px] text-neutral-400 dark:text-neutral-500">
+                    {periodRange}
+                  </p>
+                )}
+              </div>
+              {statsLoading ? (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  正在统计…
+                </p>
+              ) : monthIncome <= 0 ? (
                 <p className="mt-2 text-xs leading-5 text-neutral-400 dark:text-neutral-500">
-                  本月还没有收入记录，先在账单里记一笔收入，这里就能算出各档金额。
+                  {periodWord}还没有收入记录，先在账单里记一笔收入，这里就能算出各档金额。
                 </p>
               ) : (
                 <>
@@ -292,7 +416,7 @@ export function SavingsGoalDialog({ onClose }: { onClose: () => void }) {
                   <div className="mt-3 space-y-1.5 border-t border-neutral-900/10 pt-2.5 dark:border-white/10">
                     <PreviewRow label="储蓄合计" value={`¥${fmtAmount(savingTotal)}`} />
                     <PreviewRow label="非储蓄预算" value={`¥${fmtAmount(budgetTotal)}`} />
-                    <PreviewRow label="本月已支出" value={`¥${fmtAmount(monthExpense)}`} />
+                    <PreviewRow label={`${periodWord}已支出`} value={`¥${fmtAmount(monthExpense)}`} />
                     <PreviewRow
                       label={budgetRemaining >= 0 ? "预算剩余" : "预算超支"}
                       value={`${budgetRemaining >= 0 ? "" : "-"}¥${fmtAmount(Math.abs(budgetRemaining))}`}

@@ -28,6 +28,9 @@ public class SavingsGoalVO implements Serializable {
     @Schema(description = "分配档位列表")
     private List<SavingsBucketVO> buckets;
 
+    @Schema(description = "每月发薪日期(1-31)，必填，默认 1 号")
+    private Integer salaryDay;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "创建时间")
     private Date createTime;

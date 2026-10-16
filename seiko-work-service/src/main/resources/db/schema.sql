@@ -125,6 +125,10 @@ CREATE TABLE IF NOT EXISTS `work_bill` (
 --   2. percent 为整数百分比，服务端校验各档合计必须等于 100。
 --   3. saving 标记该档是否为「储蓄档」，前端据此把「非储蓄档金额合计」当作
 --      本月可用预算，与实际支出做对比。
+--   4. salary_day 是发薪日(1-31)，必填，默认 1 号；前端据此把「本月」换成
+--      「本发薪周期」（最近一次发薪日到今天）来统计收入与支出。1 号的周期
+--      等价于自然月，所以默认值不会改变测算结果。发薪日不用 DATE 存：
+--      它是「每月几号」的规则，不是某一天。
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS `work_savings_goal` (
@@ -132,9 +136,44 @@ CREATE TABLE IF NOT EXISTS `work_savings_goal` (
     `user_id`     BIGINT      NOT NULL COMMENT '用户ID',
     `name`        VARCHAR(50) NOT NULL DEFAULT '每月工资分配' COMMENT '目标名称',
     `buckets`     JSON        NOT NULL COMMENT '分配档位数组：[{"name":"储蓄","percent":70,"saving":true}]，percent 合计必须为 100',
+    `salary_day`  TINYINT     NOT NULL DEFAULT 1 COMMENT '每月发薪日(1-31)，必填，默认 1 号',
     `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `is_deleted`  TINYINT     NOT NULL DEFAULT 0 COMMENT '逻辑删除标志：0-未删除，1-已删除',
     `delete_time` DATETIME    DEFAULT NULL COMMENT '删除时间',
     UNIQUE KEY `uk_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='攒钱目标配置表';
+
+-- 旧库补列：上面的 CREATE TABLE IF NOT EXISTS 对已存在的表不会生效，这里补上
+-- salary_day（必填，默认 1 号）。用 information_schema 判断后再执行，整份脚本可以重复跑。
+SET @has_salary_day := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'work_savings_goal'
+      AND COLUMN_NAME = 'salary_day'
+);
+SET @sql := IF(@has_salary_day = 0,
+    'ALTER TABLE `work_savings_goal` ADD COLUMN `salary_day` TINYINT NOT NULL DEFAULT 1 COMMENT ''每月发薪日(1-31)，必填，默认 1 号'' AFTER `buckets`',
+    'DO 0');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 曾经允许留空（NULL 表示未配置，按自然月统计）。现在发薪日必填：先把历史 NULL
+-- 补成 1 号（1 号的周期与自然月完全等价，测算结果不会变），再收紧成 NOT NULL，
+-- 避免接口之外再写进空值。
+UPDATE `work_savings_goal` SET `salary_day` = 1 WHERE `salary_day` IS NULL;
+
+SET @salary_day_nullable := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'work_savings_goal'
+      AND COLUMN_NAME = 'salary_day'
+      AND IS_NULLABLE = 'YES'
+);
+SET @sql := IF(@salary_day_nullable > 0,
+    'ALTER TABLE `work_savings_goal` MODIFY COLUMN `salary_day` TINYINT NOT NULL DEFAULT 1 COMMENT ''每月发薪日(1-31)，必填，默认 1 号''',
+    'DO 0');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

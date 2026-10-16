@@ -65,6 +65,8 @@ public class SavingsGoalServiceImpl extends ServiceImpl<SavingsGoalMapper, Savin
         }
         goal.setName(StringUtils.hasText(dto.getName()) ? dto.getName().trim() : DEFAULT_NAME);
         goal.setBuckets(writeBuckets(dto.getBuckets()));
+        // 整体覆盖：发薪日必填（DTO 层 @NotNull 兜底），这里直接写入
+        goal.setSalaryDay(dto.getSalaryDay());
         if (isNew) {
             save(goal);
         } else {
